@@ -928,6 +928,49 @@ body {
   gap: 4px;
 }
 
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-pill {
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-pill:hover {
+  border-color: var(--gold-border);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.filter-pill.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .filter-pill.active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+
 .role-btn {
   background: transparent;
   border: none;

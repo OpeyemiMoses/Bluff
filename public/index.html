@@ -393,11 +393,23 @@
       </div>
 
       <!-- App Console Navigation Sub-tabs -->
-      <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px; overflow-x:auto;">
-        <button class="filter-pill active" id="tab-btn-arena" onclick="showAppTab('arena')">Live Arena</button>
-        <button class="filter-pill" id="tab-btn-consensus" onclick="showAppTab('consensus')">Consensus &amp; Alpha</button>
-        <button class="filter-pill" id="tab-btn-forecasters" onclick="showAppTab('forecasters')">Forecaster Dossiers</button>
-        <button class="filter-pill" id="tab-btn-memories" onclick="showAppTab('memories')">Walrus Audit Stream</button>
+      <div style="display:flex; gap:10px; margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:14px; overflow-x:auto;">
+        <button class="filter-pill active" id="tab-btn-arena" onclick="showAppTab('arena')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Live Arena
+        </button>
+        <button class="filter-pill" id="tab-btn-consensus" onclick="showAppTab('consensus')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          Consensus &amp; Alpha
+        </button>
+        <button class="filter-pill" id="tab-btn-forecasters" onclick="showAppTab('forecasters')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Forecaster Dossiers
+        </button>
+        <button class="filter-pill" id="tab-btn-memories" onclick="showAppTab('memories')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>
+          Walrus Audit Stream
+        </button>
       </div>
 
       <!-- SUBTAB 1: LIVE ARENA -->
@@ -407,11 +419,20 @@
             <h2 class="section-title">Live Prediction Arena</h2>
             <p class="section-sub">100% Real-time markets streamed from Polymarket Gamma API and live ESPN scoreboards.</p>
           </div>
-          <div class="filter-pills">
-            <button class="filter-pill active" onclick="filterCategory('all')">All Feeds</button>
-            <button class="filter-pill" onclick="filterCategory('sports')">Sports (NFL/Soccer)</button>
-            <button class="filter-pill" onclick="filterCategory('crypto')">Crypto</button>
-            <button class="filter-pill" onclick="filterCategory('markets')">Markets &amp; Politics</button>
+        </div>
+
+        <div class="filter-paper-card" style="margin-bottom:20px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 18px;">
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+            <div class="search-box" style="flex:1; min-width:240px; display:flex; align-items:center; gap:8px; background:var(--bg-subtle); border:1px solid var(--border); border-radius:10px; padding:8px 12px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="market-search-input" placeholder="Search markets by title, keywords, or source..." oninput="searchMarkets(this.value)" style="border:none; background:transparent; width:100%; outline:none; color:var(--ink); font-size:0.85rem;" />
+            </div>
+            <div class="filter-pills" style="margin:0;">
+              <button class="filter-pill active" onclick="filterCategory('all', this)">All Feeds</button>
+              <button class="filter-pill" onclick="filterCategory('sports', this)">Sports (NFL/Soccer)</button>
+              <button class="filter-pill" onclick="filterCategory('crypto', this)">Crypto</button>
+              <button class="filter-pill" onclick="filterCategory('markets', this)">Markets &amp; Politics</button>
+            </div>
           </div>
         </div>
 

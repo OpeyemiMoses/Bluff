@@ -12,6 +12,7 @@ const state = {
   currentView: 'landing', // 'landing' or 'app'
   currentAppTab: 'arena', // 'arena', 'consensus', 'forecasters', 'memories'
   categoryFilter: 'all',
+  searchQuery: '',
   events: [],
   forecasters: [],
   memories: [],
@@ -74,8 +75,8 @@ function initScrollObserver() {
       }
     });
   }, {
-    threshold: 0.08,
-    rootMargin: '0px 0px -20px 0px'
+    threshold: 0.05,
+    rootMargin: '0px 0px -10px 0px'
   });
 
   document.querySelectorAll('.rise-in:not(.visible)').forEach((el) => {
@@ -155,7 +156,23 @@ function showAppTab(tabName) {
 
   // Make sure we are on app view
   if (state.currentView !== 'app') {
-    showView('app');
+    const landingView = document.getElementById('view-landing');
+    const appView = document.getElementById('view-app');
+    const landingNav = document.getElementById('landing-nav-links');
+    const appNav = document.getElementById('app-nav-links');
+    const actionText = document.getElementById('nav-action-text');
+
+    if (landingView) landingView.style.display = 'none';
+    if (appView) appView.style.display = 'block';
+    if (landingNav) landingNav.style.display = 'none';
+    if (appNav) appNav.style.display = 'flex';
+    if (actionText) actionText.textContent = 'Back to Landing';
+    state.currentView = 'app';
+  }
+
+  // If dock is expanded, collapse it cleanly
+  if (state.dockExpanded) {
+    toggleDock();
   }
 
   // Hide all subtabs
@@ -164,7 +181,7 @@ function showAppTab(tabName) {
   if (activeTab) activeTab.style.display = 'block';
 
   // Update top subtab navigation pills
-  document.querySelectorAll('.app-subtab ~ * .filter-pill, #tab-btn-arena, #tab-btn-consensus, #tab-btn-forecasters, #tab-btn-memories').forEach(btn => {
+  document.querySelectorAll('.filter-pill, #tab-btn-arena, #tab-btn-consensus, #tab-btn-forecasters, #tab-btn-memories').forEach(btn => {
     btn.classList.remove('active');
   });
   const topBtn = document.getElementById(`tab-btn-${tabName}`);
@@ -289,6 +306,7 @@ async function fetchProtocolStats() {
 async function loadEvents() {
   try {
     const res = await fetch(`${API_BASE}/api/events`);
+    if (!res.ok) throw new Error('Failed to fetch events from API');
     const data = await res.json();
     state.events = data.events || [];
     renderEvents();
@@ -298,13 +316,18 @@ async function loadEvents() {
   }
 }
 
-function filterCategory(category) {
+function searchMarkets(query) {
+  state.searchQuery = query || '';
+  renderEvents();
+}
+
+function filterCategory(category, btn) {
   state.categoryFilter = category;
-  document.querySelectorAll('.filter-pills .filter-pill').forEach(btn => {
-    btn.classList.remove('active');
+  document.querySelectorAll('.filter-pills .filter-pill').forEach(b => {
+    b.classList.remove('active');
   });
-  if (event && event.target) {
-    event.target.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
   }
   renderEvents();
 }
@@ -313,15 +336,20 @@ function renderEvents() {
   const container = document.getElementById('events-grid');
   if (!container) return;
 
-  const filtered = state.categoryFilter === 'all'
-    ? state.events
-    : state.events.filter(e => e.category === state.categoryFilter);
+  const searchQuery = (state.searchQuery || '').toLowerCase();
+  const filtered = state.events.filter(e => {
+    const matchesCategory = state.categoryFilter === 'all' || e.category === state.categoryFilter;
+    const matchesSearch = !searchQuery || 
+      (e.title && e.title.toLowerCase().includes(searchQuery)) || 
+      (e.description && e.description.toLowerCase().includes(searchQuery));
+    return matchesCategory && matchesSearch;
+  });
 
   if (filtered.length === 0) {
     container.innerHTML = `
       <div style="grid-column: 1/-1; text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
-        <h3 style="font-weight:800; margin-bottom:8px;">No events found in this feed</h3>
-        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Try switching to another category or force sync live Polymarket and ESPN feeds.</p>
+        <h3 style="font-weight:800; margin-bottom:8px;">No events match your criteria</h3>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Try switching feeds or clearing your search query.</p>
         <button class="btn-primary-sm" onclick="syncLiveFeeds()">Sync Live Feeds Now</button>
       </div>
     `;
@@ -333,13 +361,18 @@ function renderEvents() {
     const tagClass = isESPN ? 'source-espn' : 'source-polymarket';
     const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
 
-    // Outcome options display
-    const outcomesHtml = e.options.map(opt => {
-      const probPct = Math.round((opt.impliedProb || 0.5) * 100);
+    // Outcome options display (robust against outcomes or outcomeProbabilities)
+    const outcomes = (e.outcomes && e.outcomes.length > 0)
+      ? e.outcomes
+      : Object.keys(e.outcomeProbabilities || {});
+
+    const outcomesHtml = outcomes.map(outcomeName => {
+      const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
+      const probPct = Math.round(prob * 100);
       return `
         <div style="background:var(--bg-subtle); padding:10px 12px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="font-size:0.88rem; color:var(--ink);">${opt.name}</strong>
+            <strong style="font-size:0.88rem; color:var(--ink);">${outcomeName}</strong>
             <span class="mono" style="font-size:0.82rem; font-weight:800; color:var(--sui-blue);">${probPct}%</span>
           </div>
           <div style="background:var(--border); height:5px; border-radius:3px; overflow:hidden;">
@@ -402,9 +435,14 @@ async function renderConsensusView() {
       if (res.ok) consensusData = await res.json();
     } catch (err) {}
 
-    const rowsHtml = e.options.map(opt => {
-      const bookProb = Math.round((opt.impliedProb || 0.5) * 100);
-      const consensusWeight = consensusData?.consensus?.[opt.name] || (opt.impliedProb || 0.5);
+    const outcomes = (e.outcomes && e.outcomes.length > 0)
+      ? e.outcomes
+      : Object.keys(e.outcomeProbabilities || {});
+
+    const rowsHtml = outcomes.map(outcomeName => {
+      const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
+      const bookProb = Math.round(prob * 100);
+      const consensusWeight = consensusData?.consensus?.[outcomeName] ?? prob;
       const consensusProb = Math.round(consensusWeight * 100);
       const divergence = consensusProb - bookProb;
       const divColor = divergence > 0 ? 'var(--emerald)' : (divergence < 0 ? 'var(--danger)' : 'var(--muted)');
@@ -412,7 +450,7 @@ async function renderConsensusView() {
 
       return `
         <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
-          <div><strong style="color:var(--ink);">${opt.name}</strong></div>
+          <div><strong style="color:var(--ink);">${outcomeName}</strong></div>
           <div class="mono" style="color:var(--muted);">${bookProb}%</div>
           <div class="mono" style="color:var(--sui-blue); font-weight:800;">${consensusProb}%</div>
           <div class="mono" style="color:${divColor}; font-weight:800;">${divSign}${divergence}%</div>
@@ -556,7 +594,7 @@ async function renderWalrusAuditView() {
           </div>
           <div class="audit-text">${m.memoryText}</div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.75rem;">
-            <span class="mono" style="color:var(--sui-blue); font-weight:700;">Job ID: ${m.walrusJobId}</span>
+            <span class="mono" style="color:var(--sui-blue); font-weight:700;">Job ID: ${m.walrusJobId || 'sqlite-relayed'}</span>
             <span class="mono" style="color:${deltaColor}; font-weight:800;">Brier Delta: ${deltaSign}${(m.brierDelta || 0).toFixed(4)}</span>
           </div>
         </div>
@@ -590,10 +628,14 @@ function openWagerModal(eventId) {
   document.getElementById('wager-submit-btn').textContent = 'Submit Prediction →';
 
   // Render options buttons
+  const outcomes = (event.outcomes && event.outcomes.length > 0)
+    ? event.outcomes
+    : Object.keys(event.outcomeProbabilities || {});
+
   const picksContainer = document.getElementById('modal-pick-options');
-  picksContainer.innerHTML = event.options.map((opt, idx) => `
-    <button type="button" class="btn-ghost-sm" onclick="selectPick('${opt.name}', this)" style="padding:12px; font-weight:800; font-size:0.9rem;">
-      ${opt.name}
+  picksContainer.innerHTML = outcomes.map(name => `
+    <button type="button" class="btn-ghost-sm" onclick="selectPick('${name}', this)" style="padding:12px; font-weight:800; font-size:0.9rem;">
+      ${name}
     </button>
   `).join('');
 
@@ -703,11 +745,15 @@ function openResolveModal(eventId) {
   selectedWinningOutcome = null;
 
   document.getElementById('resolve-modal-title').textContent = `Resolve: ${event.title}`;
-  const container = document.getElementById('resolve-pick-options');
+  
+  const outcomes = (event.outcomes && event.outcomes.length > 0)
+    ? event.outcomes
+    : Object.keys(event.outcomeProbabilities || {});
 
-  container.innerHTML = event.options.map(opt => `
-    <button type="button" class="btn-ghost-sm" onclick="selectWinningOutcome('${opt.name}', this)" style="padding:14px; font-weight:800; font-size:0.95rem;">
-      ${opt.name}
+  const container = document.getElementById('resolve-pick-options');
+  container.innerHTML = outcomes.map(name => `
+    <button type="button" class="btn-ghost-sm" onclick="selectWinningOutcome('${name}', this)" style="padding:14px; font-weight:800; font-size:0.95rem;">
+      ${name}
     </button>
   `).join('');
 
@@ -886,6 +932,8 @@ document.addEventListener('DOMContentLoaded', () => {
   runTypewriter();
   fetchProtocolStats();
   loadEvents();
-  showView('landing'); // Default view is the beautiful nim-bounty landing page!
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialView = urlParams.get('view') || 'landing';
+  showView(initialView);
   setTimeout(initScrollObserver, 100);
 });
