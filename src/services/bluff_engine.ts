@@ -80,24 +80,41 @@ export class BluffEngine {
     alphaDivergence: Record<string, number>;
     participatingForecasters: number;
     wagersCount: number;
+    sharpsCount: number;
+    bluffersCount: number;
+    picksBreakdown: Record<string, { totalStakeSui: number; effectiveWeight: number; sharps: number; bluffers: number }>;
   } {
     const event = dbService.getEvent(eventId);
     if (!event) throw new Error(`Event ${eventId} not found`);
 
     const wagers = dbService.listWagersForEvent(eventId).filter(w => w.paymentStatus === 'paid_settled');
     const outcomeWeights: Record<string, number> = {};
+    const picksBreakdown: Record<string, { totalStakeSui: number; effectiveWeight: number; sharps: number; bluffers: number }> = {};
     for (const outcome of event.outcomes) {
       outcomeWeights[outcome] = 0;
+      picksBreakdown[outcome] = { totalStakeSui: 0, effectiveWeight: 0, sharps: 0, bluffers: 0 };
     }
 
     const forecasterIds = new Set<string>();
+    let sharpsCount = 0;
+    let bluffersCount = 0;
 
     for (const wager of wagers) {
       forecasterIds.add(wager.forecasterId);
       const forecaster = dbService.getOrCreateForecaster(wager.forecasterId);
+      if (forecaster.reputationMultiplier > 1.0) sharpsCount++;
+      if (forecaster.reputationMultiplier < 1.0) bluffersCount++;
+
       // Effective stake is actual SUI staked * historical reputation multiplier from Walrus Memory
       const effectiveWeight = wager.stakeSui * forecaster.reputationMultiplier;
       outcomeWeights[wager.pick] = (outcomeWeights[wager.pick] || 0) + effectiveWeight;
+
+      if (picksBreakdown[wager.pick]) {
+        picksBreakdown[wager.pick].totalStakeSui += wager.stakeSui;
+        picksBreakdown[wager.pick].effectiveWeight += effectiveWeight;
+        if (forecaster.reputationMultiplier > 1.0) picksBreakdown[wager.pick].sharps++;
+        if (forecaster.reputationMultiplier < 1.0) picksBreakdown[wager.pick].bluffers++;
+      }
     }
 
     const totalWeight = Object.values(outcomeWeights).reduce((a, b) => a + b, 0);
@@ -124,7 +141,10 @@ export class BluffEngine {
       bluffConsensus,
       alphaDivergence,
       participatingForecasters: forecasterIds.size,
-      wagersCount: wagers.length
+      wagersCount: wagers.length,
+      sharpsCount,
+      bluffersCount,
+      picksBreakdown
     };
   }
 

@@ -56,16 +56,27 @@ app.get('/health', async (req: Request, res: Response) => {
   });
 });
 
-// GET /api/events - List live market and sports events
+// GET /api/events - List live market and sports events with Bluff Smart Consensus
 app.get('/api/events', async (req: Request, res: Response) => {
   let events = dbService.listEvents(30);
   if (events.length === 0) {
     console.log('[Bluff] No local events found, auto-syncing from live Polymarket and ESPN feeds...');
     events = await LiveDataService.syncAllLiveEvents();
   }
+  const eventsWithConsensus = events.map(e => {
+    try {
+      const consensus = BluffEngine.calculateConsensus(e.id);
+      return {
+        ...e,
+        consensus
+      };
+    } catch (_err) {
+      return e;
+    }
+  });
   res.json({
-    total: events.length,
-    events
+    total: eventsWithConsensus.length,
+    events: eventsWithConsensus
   });
 });
 

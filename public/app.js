@@ -594,16 +594,98 @@ function createEventCardHtml(e) {
     ? e.outcomes
     : Object.keys(e.outcomeProbabilities || {});
 
-  const outcomesHtml = outcomes.map(outcomeName => {
-    const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
-    const probPct = Math.round(prob * 100);
-    return `
-      <div class="outcome-bar-container">
-        <div class="outcome-fill" style="width:${probPct}%;"></div>
-        <div class="outcome-content">
-          <span>${outcomeName}</span>
-          <span class="mono" style="color:var(--teal); font-weight:800;">${probPct}%</span>
+  const consensus = e.consensus;
+  const bluffConsensus = consensus?.bluffConsensus || e.outcomeProbabilities || {};
+  const alphaDivergence = consensus?.alphaDivergence || {};
+  const sharpsCount = consensus?.sharpsCount || 0;
+  const bluffersCount = consensus?.bluffersCount || 0;
+  const wagersCount = consensus?.wagersCount || 0;
+
+  // Find biggest alpha divergence
+  let maxDivergence = 0;
+  let topFavoredOutcome = '';
+  for (const outcome of outcomes) {
+    const div = alphaDivergence[outcome] || 0;
+    if (Math.abs(div) > Math.abs(maxDivergence)) {
+      maxDivergence = div;
+      topFavoredOutcome = outcome;
+    }
+  }
+
+  // Build the arbiter summary banner for the card
+  let arbiterSummaryHtml = '';
+  if (wagersCount > 0) {
+    const divPct = Math.round(maxDivergence * 100);
+    const divSign = divPct > 0 ? '+' : '';
+    const divClass = divPct > 0 ? 'positive' : (divPct < 0 ? 'negative' : 'neutral');
+    
+    let forecasterPills = '';
+    if (sharpsCount > 0) {
+      forecasterPills += `<span class="badge-sharp-pill">🟢 ${sharpsCount} Sharp${sharpsCount > 1 ? 's' : ''} Active</span>`;
+    }
+    if (bluffersCount > 0) {
+      forecasterPills += `<span class="badge-bluffer-pill">🔴 ${bluffersCount} Bluffer${bluffersCount > 1 ? 's' : ''} Faded</span>`;
+    }
+
+    arbiterSummaryHtml = `
+      <div class="card-arbiter-summary">
+        <div class="arbiter-signal-row">
+          <span class="arbiter-badge-active">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Smart Consensus Active
+          </span>
+          <span class="arbiter-alpha-tag ${divClass}">${topFavoredOutcome ? `${topFavoredOutcome}: ` : ''}${divSign}${divPct}% Edge</span>
         </div>
+        <div class="arbiter-forecasters-row">
+          ${forecasterPills}
+          <span style="font-size:0.7rem; color:var(--muted);">${wagersCount} settled SUI stake${wagersCount > 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `;
+  } else {
+    arbiterSummaryHtml = `
+      <div class="card-arbiter-summary">
+        <div class="arbiter-signal-row">
+          <span style="color:var(--muted); font-size:0.75rem; font-weight:700;">
+            ⚖️ Consensus matches Bookmaker
+          </span>
+          <span class="arbiter-alpha-tag neutral">0% Edge</span>
+        </div>
+        <div style="font-size:0.7rem; color:var(--muted);">
+          Put down a SUI stake to shift consensus with your Walrus score.
+        </div>
+      </div>
+    `;
+  }
+
+  // Build outcomes with side-by-side Bookmaker vs Bluff Consensus comparison
+  const outcomesHtml = outcomes.map(outcomeName => {
+    const rawProb = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
+    const bookmakerPct = Math.round(rawProb * 100);
+    const smartProb = bluffConsensus[outcomeName] ?? rawProb;
+    const smartPct = Math.round(smartProb * 100);
+    const divergence = Math.round((alphaDivergence[outcomeName] || (smartProb - rawProb)) * 100);
+    const divSign = divergence > 0 ? '+' : '';
+    const divColor = divergence > 0 ? 'var(--emerald)' : (divergence < 0 ? 'var(--danger)' : 'var(--muted)');
+
+    return `
+      <div class="outcome-comparison-box">
+        <div class="outcome-header-row">
+          <span class="outcome-name">${outcomeName}</span>
+          <div class="outcome-odds-duo">
+            <span class="bookmaker-odds-label mono" title="Raw Bookmaker odds">Book: ${bookmakerPct}%</span>
+            <span class="bluff-smart-label mono" title="Bluff Smart Consensus">Bluff: ${smartPct}%</span>
+            ${divergence !== 0 ? `<span class="mono" style="font-size:0.72rem; font-weight:800; color:${divColor};">${divSign}${divergence}%</span>` : ''}
+          </div>
+        </div>
+        <div class="dual-bars-track" title="Gray: Bookmaker (${bookmakerPct}%) | Teal: Bluff Smart Consensus (${smartPct}%)">
+          <div class="dual-bar-bookmaker" style="width:${bookmakerPct}%;"></div>
+          <div class="dual-bar-smart" style="width:${smartPct}%;"></div>
+        </div>
+        <button type="button" class="btn-quick-pick" onclick="quickPick('${e.id}', '${outcomeName}')">
+          <span>Predict <strong>${outcomeName}</strong></span>
+          <span class="mono" style="color:var(--teal); font-weight:700;">Stake SUI &rarr;</span>
+        </button>
       </div>
     `;
   }).join('');
@@ -617,24 +699,37 @@ function createEventCardHtml(e) {
       <div>
         <div class="event-header">
           <span class="event-tag ${tagClass}">${sourceLabel}</span>
-          <span class="mono" style="font-size:0.72rem; color:var(--muted);">${(e.category || 'markets').toUpperCase()}</span>
+          <span class="walrus-seal-pill">⚡ Walrus Audited</span>
         </div>
         <h3 class="event-title">${e.title}</h3>
         <p class="event-desc">${e.description || 'Live market event streaming from verified official data sources.'}</p>
+        
+        <!-- Live Bluff Engine Signal Box -->
+        ${arbiterSummaryHtml}
       </div>
+
       <div>
+        <!-- Side-by-side Bookmaker vs Bluff Consensus -->
         <div class="outcome-list">
           ${outcomesHtml}
         </div>
         <div class="event-footer">
           <button class="btn-wager-x402" onclick="openWagerModal('${e.id}')">
-            Put Down Stake (x402)
+            Custom Stake (x402)
           </button>
           ${resolveBtn}
         </div>
       </div>
     </div>
   `;
+}
+
+function quickPick(eventId, outcomeName) {
+  openWagerModal(eventId);
+  setTimeout(() => {
+    const pickBtn = Array.from(document.querySelectorAll('#modal-pick-options button')).find(b => b.textContent.trim() === outcomeName);
+    if (pickBtn) selectPick(outcomeName, pickBtn);
+  }, 50);
 }
 
 function renderEvents() {

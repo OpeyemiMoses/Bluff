@@ -1669,3 +1669,260 @@ html, body {
     gap: 8px;
   }
 }
+
+/* ==========================================================
+   BLUFF ENGINE LIVE VISUALIZATION (Cards & Explainer)
+   ========================================================== */
+.bluff-engine-explainer-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: radial-gradient(100% 120% at 0% 0%, rgba(13, 242, 201, 0.08), rgba(15, 19, 22, 0.95)), var(--card);
+  border: 1px solid var(--teal-border);
+  border-radius: 16px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.explainer-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.explainer-step .step-num {
+  font: 700 12px var(--mono);
+  background: rgba(13, 242, 201, 0.12);
+  color: var(--teal);
+  border: 1px solid var(--teal-border);
+  border-radius: 6px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+
+.explainer-step strong {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.explainer-step span {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--ink-2);
+  line-height: 1.35;
+}
+
+.explainer-step.highlight-step {
+  background: rgba(13, 242, 201, 0.06);
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(13, 242, 201, 0.2);
+}
+
+.explainer-arrow {
+  color: var(--teal);
+  font-weight: 800;
+  font-size: 1.1rem;
+  opacity: 0.6;
+}
+
+@media (max-width: 860px) {
+  .bluff-engine-explainer-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .explainer-arrow {
+    display: none;
+  }
+}
+
+/* Card Engine Elements */
+.walrus-seal-pill {
+  font: 600 0.68rem var(--mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(13, 242, 201, 0.08);
+  color: var(--teal);
+  border: 1px solid var(--teal-border);
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.card-arbiter-summary {
+  background: var(--bg-subtle);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arbiter-signal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.arbiter-badge-active {
+  color: var(--teal);
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.arbiter-alpha-tag {
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: 0.74rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.arbiter-alpha-tag.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.arbiter-alpha-tag.neutral {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  border: 1px solid var(--rule);
+}
+
+.arbiter-forecasters-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+.badge-sharp-pill {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--emerald);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.badge-bluffer-pill {
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--danger);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+/* Outcome Comparison Box */
+.outcome-comparison-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+
+.outcome-comparison-box:hover {
+  border-color: var(--teal-border);
+}
+
+.outcome-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.outcome-name {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.outcome-odds-duo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+
+.bookmaker-odds-label {
+  color: var(--muted);
+}
+
+.bluff-smart-label {
+  color: var(--teal);
+  font-weight: 800;
+  background: rgba(13, 242, 201, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--teal-border);
+}
+
+.dual-bars-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.dual-bar-bookmaker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.dual-bar-smart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #0df2c9, #00b493);
+  box-shadow: 0 0 10px rgba(13, 242, 201, 0.5);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-quick-pick {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-quick-pick:hover {
+  background: rgba(13, 242, 201, 0.08);
+  border-color: var(--teal);
+  color: var(--teal);
+}
