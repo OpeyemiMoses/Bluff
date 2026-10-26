@@ -329,8 +329,7 @@
           <div class="session-avatar">
             <div class="logo-badge" style="width:36px; height:36px; font-size:1.1rem;">B</div>
           </div>
-          <div class="session-details">
-            <div class="session-address" id="session-wallet-display" onclick="openWalletModal()" style="cursor:pointer;" title="Click to change active wallet">0x_sharp_analyst_001</div>
+            <div class="session-address" id="session-wallet-display" onclick="openWalletModal()" style="cursor:pointer;" title="Click to connect or switch Sui wallet">Connect Sui Wallet</div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <span class="session-role-badge">Sui Mainnet</span>
               <span class="session-role-badge" style="background:var(--sui-tint); color:var(--sui-blue); border-color:rgba(0,113,227,0.2);">x402 Active</span>
@@ -574,9 +573,8 @@
         <p class="modal-desc" id="modal-event-desc">Event description</p>
       </div>
 
-      <div class="modal-body">
-        <label class="modal-label">Your Forecaster Address</label>
-        <input type="text" class="modal-input mono" id="wager-forecaster-input" value="0x_sharp_analyst_001" placeholder="0x... or sui address" />
+        <label class="modal-label">Your Forecaster Sui Address</label>
+        <input type="text" class="modal-input mono" id="wager-forecaster-input" value="" placeholder="0x... (Connect Sui Wallet or enter address)" />
 
         <label class="modal-label" style="margin-top:14px;">Select Outcome Pick</label>
         <div class="pick-buttons-grid" id="modal-pick-options">

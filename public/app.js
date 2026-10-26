@@ -20,7 +20,7 @@ const state = {
   memories: [],
   stats: null,
   activeWagerModal: null,
-  activeForecasterId: '0x_sharp_analyst_001',
+  activeForecasterId: localStorage.getItem('bluff_connected_sui_address') || '',
   dockExpanded: false
 };
 
