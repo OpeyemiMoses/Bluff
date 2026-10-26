@@ -7,6 +7,7 @@ import { BluffEngine } from './services/bluff_engine.js';
 import { X402Service } from './services/x402.js';
 import { WalrusMemoryService } from './services/walrus_memory.js';
 import { TatumSuiService } from './services/tatum_sui.js';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 
 dotenv.config();
 
@@ -245,6 +246,38 @@ app.get('/api/walrus/generate-keys', async (req: Request, res: Response) => {
     suiAddress: keys.suiAddress,
     instructions: 'Use this suiAddress as MEMWAL_AGENT_ID on the submission form, and privateKey in your .env'
   });
+});
+
+// GET /api/wallet/balance/:address - Fetch live SUI balance for any Sui address
+app.get('/api/wallet/balance/:address', async (req: Request, res: Response) => {
+  try {
+    const address = String(req.params.address);
+    let rawBalance = '0';
+    try {
+      rawBalance = await TatumSuiService.getBalance(address);
+    } catch (_e) {
+      rawBalance = '0';
+    }
+    const balanceSui = (Number(rawBalance) / 1e9).toFixed(4);
+    res.json({ address, balanceSui: Number(balanceSui), rawBalance, network: 'sui:mainnet' });
+  } catch (err: any) {
+    res.json({ address: req.params.address, balanceSui: 0, rawBalance: '0', error: err.message });
+  }
+});
+
+// POST /api/wallet/generate - Generate authentic Sui Ed25519 keypair and address
+app.post('/api/wallet/generate', (req: Request, res: Response) => {
+  try {
+    const keypair = new Ed25519Keypair();
+    const address = keypair.toSuiAddress();
+    res.json({
+      address,
+      publicKey: keypair.getPublicKey().toBase64(),
+      message: 'Generated real Sui Ed25519 account'
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export const server = app.listen(PORT, () => {
