@@ -348,5 +348,41 @@ export const dbService = {
       walrusJobId: r.walrus_job_id,
       timestamp: r.timestamp
     }));
+  },
+
+  listForecasters(limit = 50): ForecasterProfile[] {
+    const rows = db.prepare('SELECT * FROM forecasters ORDER BY total_wagers DESC, brier_score ASC LIMIT ?').all(limit) as any[];
+    return rows.map(r => ({
+      id: r.id,
+      label: r.label,
+      brierScore: r.brier_score,
+      totalWagers: r.total_wagers,
+      wonWagers: r.won_wagers,
+      lostWagers: r.lost_wagers,
+      reputationMultiplier: r.reputation_multiplier,
+      lastMemorySummary: r.last_memory_summary,
+      lastActive: r.last_active
+    }));
+  },
+
+  getProtocolStats() {
+    const activeEvents = db.prepare("SELECT COUNT(*) as count FROM events WHERE status != 'resolved'").get() as any;
+    const totalEvents = db.prepare("SELECT COUNT(*) as count FROM events").get() as any;
+    const totalWagers = db.prepare("SELECT COUNT(*) as count, COALESCE(SUM(stake_sui), 0) as totalStake FROM wagers").get() as any;
+    const totalMemories = db.prepare("SELECT COUNT(*) as count FROM walrus_memories").get() as any;
+    const fadedBluffers = db.prepare("SELECT COUNT(*) as count FROM forecasters WHERE reputation_multiplier < 0.6").get() as any;
+    const verifiedSharps = db.prepare("SELECT COUNT(*) as count FROM forecasters WHERE reputation_multiplier > 1.5").get() as any;
+    const totalForecasters = db.prepare("SELECT COUNT(*) as count FROM forecasters").get() as any;
+
+    return {
+      activeEvents: activeEvents?.count || 0,
+      totalEvents: totalEvents?.count || 0,
+      totalWagers: totalWagers?.count || 0,
+      totalStakedSui: Math.round((totalWagers?.totalStake || 0) * 100) / 100,
+      totalMemories: totalMemories?.count || 0,
+      fadedBluffers: fadedBluffers?.count || 0,
+      verifiedSharps: verifiedSharps?.count || 0,
+      totalForecasters: totalForecasters?.count || 0
+    };
   }
 };

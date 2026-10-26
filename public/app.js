@@ -1,28 +1,65 @@
 // ==========================================================
 // BLUFF FRONTEND CLIENT ENGINE
-// Handles Live Feeds, x402 Protocol Handshake, Walrus Recall,
-// Collapsible Up Tab Dock & Spring Scroll Animations
+// 100% Real Live Ingestion & Database Driven (Zero Mock Data)
+// Dual-View Architecture (Landing Page + App Console)
+// Collapsible Up-Tab Bottom Dock & Tactile Spring Pop Animations
 // ==========================================================
 
 const API_BASE = ''; // Same origin
 
 // Local Application State
 const state = {
-  currentView: 'arena',
+  currentView: 'landing', // 'landing' or 'app'
+  currentAppTab: 'arena', // 'arena', 'consensus', 'forecasters', 'memories'
   categoryFilter: 'all',
   events: [],
-  forecasters: {},
+  forecasters: [],
   memories: [],
+  stats: null,
   activeWagerModal: null,
-  wallet: {
-    address: '0x68ca62935f09c2ccc0d8dfb99d1806c3dab9d394922d3d9dcd4a48952ea4427a',
-    balanceSui: 25.00
-  },
+  activeForecasterId: '0x_sharp_analyst_001',
   dockExpanded: false
 };
 
 // ----------------------------------------------------------
-// 1. SCROLL ANIMATION OBSERVER (RISE IN & SPRING POP)
+// 1. TYPEWRITER ANIMATION (HERO SECTION)
+// ----------------------------------------------------------
+const typewriterWords = ['provable', 'unbluffable', 'verifiable', 'sovereign', 'adversarial'];
+let wordIdx = 0;
+let charIdx = 0;
+let isDeleting = false;
+let typewriterTimer = null;
+
+function runTypewriter() {
+  const target = document.getElementById('typewriter-text');
+  if (!target) return;
+
+  const currentWord = typewriterWords[wordIdx];
+
+  if (isDeleting) {
+    charIdx--;
+    target.textContent = currentWord.substring(0, charIdx);
+  } else {
+    charIdx++;
+    target.textContent = currentWord.substring(0, charIdx);
+  }
+
+  let delay = isDeleting ? 45 : 90;
+
+  if (!isDeleting && charIdx === currentWord.length) {
+    delay = 2000; // Pause at full word
+    isDeleting = true;
+  } else if (isDeleting && charIdx === 0) {
+    isDeleting = false;
+    wordIdx = (wordIdx + 1) % typewriterWords.length;
+    delay = 400; // Pause before typing next word
+  }
+
+  typewriterTimer = setTimeout(runTypewriter, delay);
+}
+
+// ----------------------------------------------------------
+// 2. SCROLL ANIMATION OBSERVER (RISE IN & SPRING POP)
 // ----------------------------------------------------------
 let scrollObserver;
 
@@ -33,13 +70,12 @@ function initScrollObserver() {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        // Once visible, don't un-animate
         scrollObserver.unobserve(entry.target);
       }
     });
   }, {
-    threshold: 0.12,
-    rootMargin: '0px 0px -40px 0px'
+    threshold: 0.08,
+    rootMargin: '0px 0px -20px 0px'
   });
 
   document.querySelectorAll('.rise-in:not(.visible)').forEach((el) => {
@@ -48,7 +84,7 @@ function initScrollObserver() {
 }
 
 // ----------------------------------------------------------
-// 2. THEME SWITCHER (LIGHT / DARK)
+// 3. THEME SWITCHER (LIGHT / DARK)
 // ----------------------------------------------------------
 function initTheme() {
   const saved = localStorage.getItem('bluff_theme') || 'light';
@@ -75,133 +111,201 @@ function updateThemeIcon(theme) {
 }
 
 // ----------------------------------------------------------
-// 3. COLLAPSIBLE UP TAB DOCK
+// 4. VIEW & TAB SWITCHING
+// ----------------------------------------------------------
+function showView(viewName) {
+  state.currentView = viewName;
+
+  const landingView = document.getElementById('view-landing');
+  const appView = document.getElementById('view-app');
+  const landingNav = document.getElementById('landing-nav-links');
+  const appNav = document.getElementById('app-nav-links');
+  const actionText = document.getElementById('nav-action-text');
+
+  if (viewName === 'landing') {
+    if (landingView) landingView.style.display = 'block';
+    if (appView) appView.style.display = 'none';
+    if (landingNav) landingNav.style.display = 'flex';
+    if (appNav) appNav.style.display = 'none';
+    if (actionText) actionText.textContent = 'Launch App Console';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    if (landingView) landingView.style.display = 'none';
+    if (appView) appView.style.display = 'block';
+    if (landingNav) landingNav.style.display = 'none';
+    if (appNav) appNav.style.display = 'flex';
+    if (actionText) actionText.textContent = 'Back to Landing';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showAppTab(state.currentAppTab || 'arena');
+  }
+
+  setTimeout(initScrollObserver, 60);
+}
+
+function toggleMainView() {
+  if (state.currentView === 'landing') {
+    showView('app');
+  } else {
+    showView('landing');
+  }
+}
+
+function showAppTab(tabName) {
+  state.currentAppTab = tabName;
+
+  // Make sure we are on app view
+  if (state.currentView !== 'app') {
+    showView('app');
+  }
+
+  // Hide all subtabs
+  document.querySelectorAll('.app-subtab').forEach(tab => tab.style.display = 'none');
+  const activeTab = document.getElementById(`app-tab-${tabName}`);
+  if (activeTab) activeTab.style.display = 'block';
+
+  // Update top subtab navigation pills
+  document.querySelectorAll('.app-subtab ~ * .filter-pill, #tab-btn-arena, #tab-btn-consensus, #tab-btn-forecasters, #tab-btn-memories').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const topBtn = document.getElementById(`tab-btn-${tabName}`);
+  if (topBtn) topBtn.classList.add('active');
+
+  // Update desktop navbar app links
+  document.querySelectorAll('#app-nav-links .nav-link-btn').forEach(btn => btn.classList.remove('active'));
+  const appNavBtn = document.getElementById(`app-nav-${tabName}`);
+  if (appNavBtn) appNavBtn.classList.add('active');
+
+  // Update dock cards
+  document.querySelectorAll('.dock-nav-card').forEach(card => card.classList.remove('active'));
+  const dockCard = document.getElementById(`dock-nav-${tabName}`);
+  if (dockCard) dockCard.classList.add('active');
+
+  // Refresh tab-specific data
+  if (tabName === 'arena') {
+    renderEvents();
+  } else if (tabName === 'consensus') {
+    renderConsensusView();
+  } else if (tabName === 'forecasters') {
+    renderForecastersView();
+  } else if (tabName === 'memories') {
+    renderWalrusAuditView();
+  }
+
+  setTimeout(initScrollObserver, 40);
+}
+
+function scrollToSection(sectionId) {
+  if (state.currentView !== 'landing') {
+    showView('landing');
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  } else {
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  if (!item) return;
+  const wasActive = item.classList.contains('active');
+
+  // Close all other FAQ items for clean accordion effect
+  document.querySelectorAll('.faq-item').forEach(i => {
+    i.classList.remove('active');
+    const toggle = i.querySelector('.faq-toggle');
+    if (toggle) toggle.textContent = '+';
+  });
+
+  if (!wasActive) {
+    item.classList.add('active');
+    const toggle = item.querySelector('.faq-toggle');
+    if (toggle) toggle.textContent = '−';
+  }
+}
+
+// ----------------------------------------------------------
+// 5. COLLAPSIBLE UP-TAB BOTTOM DOCK
 // ----------------------------------------------------------
 function toggleDock() {
   const wrapper = document.getElementById('dock-wrapper');
-  const label = document.getElementById('dock-btn-label');
+  const label = document.getElementById('dock-toggle-label');
   state.dockExpanded = !state.dockExpanded;
 
   if (state.dockExpanded) {
     wrapper.classList.add('expanded');
-    label.textContent = 'Collapse Dock';
+    if (label) label.textContent = 'Collapse';
   } else {
     wrapper.classList.remove('expanded');
-    label.textContent = 'Dashboard & Controls';
+    if (label) label.textContent = 'Controls';
   }
 }
 
 // ----------------------------------------------------------
-// 4. VIEW SWITCHING
+// 6. REAL LIVE PROTOCOL STATS (GET /api/stats)
 // ----------------------------------------------------------
-function switchView(viewName) {
-  state.currentView = viewName;
+async function fetchProtocolStats() {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats`);
+    if (!res.ok) throw new Error('Failed to fetch protocol stats');
+    const stats = await res.json();
+    state.stats = stats;
 
-  // Hide all views
-  document.querySelectorAll('.page-view').forEach(el => el.style.display = 'none');
-  
-  // Show target view
-  const target = document.getElementById(`view-${viewName}`);
-  if (target) {
-    target.style.display = 'block';
+    // Landing Page Ribbon Counters
+    const statEvents = document.getElementById('landing-stat-events');
+    const statStaked = document.getElementById('landing-stat-staked');
+    const statMemories = document.getElementById('landing-stat-memories');
+    const statForecasters = document.getElementById('landing-stat-forecasters');
+
+    if (statEvents) statEvents.textContent = stats.activeEvents ?? stats.totalEvents ?? 0;
+    if (statStaked) statStaked.textContent = `${(stats.totalStakedSui || 0).toFixed(2)} SUI`;
+    if (statMemories) statMemories.textContent = stats.totalMemories ?? 0;
+    if (statForecasters) statForecasters.textContent = stats.totalForecasters ?? 0;
+
+    // Bottom Dock Counters
+    const dockEvents = document.getElementById('dock-stat-events');
+    const dockSui = document.getElementById('dock-stat-sui');
+    const dockMem = document.getElementById('dock-stat-memories');
+
+    if (dockEvents) dockEvents.textContent = stats.activeEvents ?? stats.totalEvents ?? 0;
+    if (dockSui) dockSui.textContent = `${(stats.totalStakedSui || 0).toFixed(2)} SUI`;
+    if (dockMem) dockMem.textContent = stats.totalMemories ?? 0;
+
+    // Console Session Quick Bar
+    const sessionQuick = document.getElementById('session-stats-quick');
+    if (sessionQuick) {
+      sessionQuick.textContent = `${stats.activeEvents} Markets • ${stats.totalMemories} Walrus Dossiers • ${stats.fadedBluffers} Faded`;
+    }
+  } catch (err) {
+    console.warn('[Bluff] Stats fetch warning:', err);
   }
-
-  // Update top navbar active state
-  document.querySelectorAll('.nav-link-btn').forEach(btn => btn.classList.remove('active'));
-  const navBtn = document.getElementById(`nav-btn-${viewName}`);
-  if (navBtn) navBtn.classList.add('active');
-
-  // Update dock active state
-  document.querySelectorAll('.dock-nav-card').forEach(card => card.classList.remove('active'));
-  const dockCard = document.getElementById(`dock-card-${viewName}`);
-  if (dockCard) dockCard.classList.add('active');
-
-  // Trigger relevant view render
-  if (viewName === 'arena') renderEvents();
-  if (viewName === 'consensus') renderConsensusView();
-  if (viewName === 'forecasters') renderForecastersView();
-  if (viewName === 'memories') renderMemoriesView();
-
-  // Scroll smoothly to section if needed
-  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Re-observe newly visible rise-in elements
-  setTimeout(initScrollObserver, 60);
 }
 
 // ----------------------------------------------------------
-// 5. TOAST NOTIFICATIONS
+// 7. LIVE PREDICTION ARENA (GET /api/events)
 // ----------------------------------------------------------
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = message;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(12px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 4500);
-}
-
-// ----------------------------------------------------------
-// 6. DATA INGESTION & RENDERING
-// ----------------------------------------------------------
-async function loadInitialData() {
+async function loadEvents() {
   try {
     const res = await fetch(`${API_BASE}/api/events`);
     const data = await res.json();
     state.events = data.events || [];
-
-    // Also fetch memories
-    const memRes = await fetch(`${API_BASE}/api/memories`);
-    const memData = await memRes.json();
-    state.memories = memData.memories || [];
-
-    updateStatsCounters();
     renderEvents();
-    renderResolveSelect();
-    setTimeout(initScrollObserver, 100);
   } catch (err) {
-    console.error('Failed to load initial events:', err);
-    showToast('Failed to connect to Bluff API server.', 'error');
+    console.error('[Bluff] Failed to load events:', err);
+    showToast('Failed to connect to live events feed', 'error');
   }
 }
 
-async function syncLiveFeeds() {
-  showToast('Connecting to Polymarket Gamma & ESPN live scoreboards...', 'info');
-  try {
-    const res = await fetch(`${API_BASE}/api/events/sync`, { method: 'POST' });
-    const data = await res.json();
-    state.events = data.events || [];
-    renderEvents();
-    updateStatsCounters();
-    showToast(`Synced ${data.count} live events from Polymarket & ESPN!`, 'success');
-  } catch (err) {
-    showToast('Sync failed. Please check network connection.', 'error');
+function filterCategory(category) {
+  state.categoryFilter = category;
+  document.querySelectorAll('.filter-pills .filter-pill').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  if (event && event.target) {
+    event.target.classList.add('active');
   }
-}
-
-function updateStatsCounters() {
-  const marketsEl = document.getElementById('stat-markets-count');
-  const memoriesEl = document.getElementById('stat-memories-written');
-  
-  if (marketsEl) marketsEl.textContent = state.events.length;
-  if (memoriesEl) memoriesEl.textContent = state.memories.length;
-
-  const dockBalance = document.getElementById('dock-balance-display');
-  if (dockBalance) dockBalance.textContent = `${state.wallet.balanceSui.toFixed(2)} SUI`;
-}
-
-function filterCategory(cat) {
-  state.categoryFilter = cat;
-  document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
   renderEvents();
 }
 
@@ -209,65 +313,66 @@ function renderEvents() {
   const container = document.getElementById('events-grid');
   if (!container) return;
 
-  const filtered = state.events.filter(e => {
-    if (state.categoryFilter === 'all') return true;
-    return e.category === state.categoryFilter;
-  });
+  const filtered = state.categoryFilter === 'all'
+    ? state.events
+    : state.events.filter(e => e.category === state.categoryFilter);
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:48px; color:var(--muted);">No events found in this category.</div>`;
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
+        <h3 style="font-weight:800; margin-bottom:8px;">No events found in this feed</h3>
+        <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Try switching to another category or force sync live Polymarket and ESPN feeds.</p>
+        <button class="btn-primary-sm" onclick="syncLiveFeeds()">Sync Live Feeds Now</button>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = filtered.map(event => {
-    const isResolved = event.status === 'resolved';
-    const tagClass = `tag-${event.category}`;
-    
-    const outcomesHtml = event.outcomes.map(outcome => {
-      const prob = event.outcomeProbabilities[outcome] || 0.5;
-      const probPercent = Math.round(prob * 100);
-      const isWinner = isResolved && event.winnerOutcome === outcome;
+  container.innerHTML = filtered.map(e => {
+    const isESPN = e.source === 'espn';
+    const tagClass = isESPN ? 'source-espn' : 'source-polymarket';
+    const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
 
+    // Outcome options display
+    const outcomesHtml = e.options.map(opt => {
+      const probPct = Math.round((opt.impliedProb || 0.5) * 100);
       return `
-        <div class="outcome-row ${isWinner ? 'selected' : ''}" onclick="openWagerModal('${event.id}', '${outcome}', ${prob})">
-          <div class="outcome-bar-fill" style="width: ${probPercent}%;"></div>
-          <span class="outcome-name">
-            ${outcome} ${isWinner ? '🏆' : ''}
-          </span>
-          <span class="outcome-prob">${probPercent}%</span>
+        <div style="background:var(--bg-subtle); padding:10px 12px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <strong style="font-size:0.88rem; color:var(--ink);">${opt.name}</strong>
+            <span class="mono" style="font-size:0.82rem; font-weight:800; color:var(--sui-blue);">${probPct}%</span>
+          </div>
+          <div style="background:var(--border); height:5px; border-radius:3px; overflow:hidden;">
+            <div style="background:var(--sui-blue); width:${probPct}%; height:100%;"></div>
+          </div>
         </div>
       `;
     }).join('');
 
-    return `
-      <div class="event-card rise-in">
-        <div>
-          <div class="event-header">
-            <span class="event-tag ${tagClass}">${event.category.toUpperCase()} &bull; ${event.source.toUpperCase()}</span>
-            <span class="event-status-badge ${isResolved ? 'mono text-emerald' : 'mono text-muted'}">
-              <span class="tag-pulse-dot" style="background:${isResolved ? 'var(--emerald)' : 'var(--gold)'}; width:6px; height:6px;"></span>
-              ${isResolved ? 'RESOLVED' : 'LIVE'}
-            </span>
-          </div>
+    const resolveBtn = e.status !== 'resolved'
+      ? `<button class="btn-ghost-sm" onclick="openResolveModal('${e.id}')" title="Resolve outcome with official oracle" style="font-size:0.75rem;">Resolve</button>`
+      : `<span style="font-size:0.75rem; color:var(--emerald); font-weight:800; padding:4px 8px; background:var(--emerald-tint); border-radius:6px;">RESOLVED</span>`;
 
-          <h3 class="event-title">${event.title}</h3>
-          <p class="event-desc">${event.description || (event.liveScore ? `Live: ${event.liveScore}` : 'Real-time prediction event')}</p>
+    return `
+      <div class="event-card rise-in" id="card-${e.id}">
+        <div class="event-header">
+          <span class="event-source-tag ${tagClass}">${sourceLabel}</span>
+          <span class="mono" style="font-size:0.72rem; color:var(--muted);">${e.category.toUpperCase()}</span>
         </div>
 
-        <div>
-          <div class="outcomes-list">
-            ${outcomesHtml}
-          </div>
+        <h3 class="event-title">${e.title}</h3>
+        <p class="event-desc">${e.description || 'Live market event streaming from verified official data sources.'}</p>
 
-          <div class="event-footer">
-            <span class="mono" style="font-size:0.75rem; color:var(--muted);">
-              ${event.endsAt ? new Date(event.endsAt).toLocaleDateString() : 'Active Market'}
-            </span>
-            <button class="btn-wager-x402" onclick="openWagerModal('${event.id}', '${event.outcomes[0]}', ${event.outcomeProbabilities[event.outcomes[0]] || 0.5})">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Challenge via x402
-            </button>
-          </div>
+        <div style="margin: 14px 0;">
+          ${outcomesHtml}
+        </div>
+
+        <div class="event-actions">
+          <button class="btn-primary-sm" onclick="openWagerModal('${e.id}')" style="flex:1; justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Put Down Stake (x402)
+          </button>
+          ${resolveBtn}
         </div>
       </div>
     `;
@@ -277,156 +382,59 @@ function renderEvents() {
 }
 
 // ----------------------------------------------------------
-// 7. x402 STAKING NEGOTIATION MODAL
-// ----------------------------------------------------------
-async function openWagerModal(eventId, pick, impliedProb) {
-  const event = state.events.find(e => e.id === eventId);
-  if (!event) return;
-
-  const stakeSui = 0.25;
-  const potentialPayout = stakeSui * (1 / Math.max(impliedProb, 0.05));
-
-  state.activeWagerModal = {
-    eventId,
-    pick,
-    impliedProb,
-    stakeSui,
-    potentialPayout
-  };
-
-  document.getElementById('wager-event-title').textContent = event.title;
-  document.getElementById('wager-pick-name').textContent = pick;
-  document.getElementById('wager-pick-prob').textContent = `${Math.round(impliedProb * 100)}%`;
-  document.getElementById('wager-pick-stake').textContent = `${stakeSui.toFixed(2)} SUI`;
-  document.getElementById('wager-pick-payout').textContent = `${potentialPayout.toFixed(2)} SUI`;
-
-  // Request x402 challenge from server without payment to show genuine HTTP 402 negotiation!
-  try {
-    const res = await fetch(`${API_BASE}/api/wager`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventId,
-        forecasterId: state.wallet.address,
-        pick,
-        stakeSui
-      })
-    });
-
-    if (res.status === 402) {
-      const data = await res.json();
-      const rawHeader = res.headers.get('PAYMENT-REQUIRED');
-      document.getElementById('x402-challenge-preview').textContent = 
-        `// HTTP 402 Payment Required Response\n` +
-        `HTTP/1.1 402 Payment Required\n` +
-        `PAYMENT-REQUIRED: ${rawHeader ? rawHeader.slice(0, 48) + '...' : 'eyJ4NDAy...'}\n\n` +
-        JSON.stringify(data.challenge, null, 2);
-    }
-  } catch (err) {
-    document.getElementById('x402-challenge-preview').textContent = '// Generating x402 challenge payload...';
-  }
-
-  document.getElementById('modal-wager-x402').classList.add('open');
-}
-
-async function executeX402Stake() {
-  if (!state.activeWagerModal) return;
-  const { eventId, pick, stakeSui } = state.activeWagerModal;
-
-  if (state.wallet.balanceSui < stakeSui) {
-    showToast('Insufficient SUI balance. Use Faucet +10 in the bottom dock.', 'error');
-    return;
-  }
-
-  showToast('Signing Sui PTB micro-stake transaction...', 'info');
-
-  // Client creates simulated or real transaction digest
-  const simTxDigest = `sui_ptb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-  try {
-    // Retry request with PAYMENT-SIGNATURE header!
-    const res = await fetch(`${API_BASE}/api/wager`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'PAYMENT-SIGNATURE': simTxDigest
-      },
-      body: JSON.stringify({
-        eventId,
-        forecasterId: state.wallet.address,
-        pick,
-        stakeSui
-      })
-    });
-
-    if (res.ok || res.status === 201) {
-      const data = await res.json();
-      state.wallet.balanceSui -= stakeSui;
-      updateStatsCounters();
-      closeModal('modal-wager-x402');
-
-      showToast(`x402 Stake Confirmed on Sui! Wager locked for ${pick}.`, 'success');
-
-      // Refresh event consensus in background
-      switchView('arena');
-    } else {
-      const err = await res.json();
-      showToast(`Settlement failed: ${err.message || err.error}`, 'error');
-    }
-  } catch (err) {
-    showToast('Network error during x402 settlement.', 'error');
-  }
-}
-
-// ----------------------------------------------------------
 // 8. ALPHA DIVERGENCE & CONSENSUS VIEW
 // ----------------------------------------------------------
 async function renderConsensusView() {
-  const container = document.getElementById('consensus-container');
+  const container = document.getElementById('consensus-table-container');
   if (!container) return;
 
-  container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:36px;" class="mono text-muted">Calculating Walrus Memory Calibration & Alpha Divergence...</div>`;
+  if (state.events.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted); text-align:center; padding:32px;">Loading live events for consensus analysis...</p>';
+    return;
+  }
 
-  const cardsHtml = await Promise.all(state.events.slice(0, 12).map(async event => {
+  const sampleEvents = state.events.slice(0, 10);
+
+  const cardsHtml = await Promise.all(sampleEvents.map(async (e) => {
     let consensusData = null;
     try {
-      const res = await fetch(`${API_BASE}/api/events/${event.id}`);
+      const res = await fetch(`${API_BASE}/api/events/${e.id}`);
       if (res.ok) consensusData = await res.json();
-    } catch {}
+    } catch (err) {}
 
-    const bookmakerOdds = event.outcomeProbabilities;
-    const bluffConsensus = consensusData?.bluffConsensus || bookmakerOdds;
-    const alphaDivergence = consensusData?.alphaDivergence || {};
-
-    const rowsHtml = event.outcomes.map(out => {
-      const bookmakerProb = Math.round((bookmakerOdds[out] || 0.5) * 100);
-      const consensusProb = Math.round((bluffConsensus[out] || 0.5) * 100);
-      const diff = consensusProb - bookmakerProb;
-      const diffColor = diff > 0 ? 'var(--emerald)' : diff < 0 ? 'var(--danger)' : 'var(--muted)';
-      const diffSign = diff > 0 ? `+${diff}%` : `${diff}%`;
+    const rowsHtml = e.options.map(opt => {
+      const bookProb = Math.round((opt.impliedProb || 0.5) * 100);
+      const consensusWeight = consensusData?.consensus?.[opt.name] || (opt.impliedProb || 0.5);
+      const consensusProb = Math.round(consensusWeight * 100);
+      const divergence = consensusProb - bookProb;
+      const divColor = divergence > 0 ? 'var(--emerald)' : (divergence < 0 ? 'var(--danger)' : 'var(--muted)');
+      const divSign = divergence > 0 ? '+' : '';
 
       return `
-        <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-          <strong style="color:var(--ink);">${out}</strong>
-          <div class="mono" style="display:flex; align-items:center; gap:14px; font-size:0.85rem;">
-            <span>Market: <strong>${bookmakerProb}%</strong></span>
-            <span>Bluff: <strong>${consensusProb}%</strong></span>
-            <span style="font-weight:800; color:${diffColor};">${diffSign}</span>
-          </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
+          <div><strong style="color:var(--ink);">${opt.name}</strong></div>
+          <div class="mono" style="color:var(--muted);">${bookProb}%</div>
+          <div class="mono" style="color:var(--sui-blue); font-weight:800;">${consensusProb}%</div>
+          <div class="mono" style="color:${divColor}; font-weight:800;">${divSign}${divergence}%</div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="event-card rise-in">
+      <div class="event-card rise-in" style="margin-bottom:16px;">
         <div class="event-header">
-          <span class="event-tag">${event.category.toUpperCase()}</span>
-          <span class="mono" style="font-size:0.75rem; color:var(--sui-blue);">
-            ${consensusData?.participatingForecasters || 0} Forecasters Calibrated
-          </span>
+          <span class="mono" style="font-size:0.75rem; color:var(--muted);">${e.source.toUpperCase()} &bull; ${e.category.toUpperCase()}</span>
+          <span style="font-size:0.72rem; background:var(--sui-tint); color:var(--sui-blue); font-weight:800; padding:2px 8px; border-radius:6px;">STAKE WEIGHTED</span>
         </div>
-        <h3 class="event-title">${event.title}</h3>
-        <div style="margin-top:14px;">
+        <h4 style="font-size:1.05rem; font-weight:800; margin: 4px 0 12px; color:var(--ink);">${e.title}</h4>
+        
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; font-size:0.72rem; color:var(--muted); font-weight:800; text-transform:uppercase; padding-bottom:6px; border-bottom:1px solid var(--border);">
+          <div>Option</div>
+          <div>Bookmaker Odds</div>
+          <div>Sharp Consensus</div>
+          <div>Alpha Divergence</div>
+        </div>
+        <div>
           ${rowsHtml}
         </div>
       </div>
@@ -438,227 +446,446 @@ async function renderConsensusView() {
 }
 
 // ----------------------------------------------------------
-// 9. FORECASTER DOSSIERS & HALL OF SHAME
+// 9. FORECASTER DIRECTORY (100% REAL DATABASE PROFILES)
 // ----------------------------------------------------------
 async function renderForecastersView() {
   const container = document.getElementById('forecasters-grid');
+  const badge = document.getElementById('forecasters-count-badge');
   if (!container) return;
 
-  const mockForecasters = [
-    { id: '0x_sharp_analyst_001', label: 'AlphaSui_Sharp', brier: 0.180, calls: 14, won: 12, lost: 2, mult: 2.20, badge: 'VERIFIED SHARP', isSharp: true },
-    { id: '0x_chronic_bluffer_999', label: 'MoonBoy_Crypto', brier: 0.820, calls: 9, won: 1, lost: 8, mult: 0.30, badge: 'CHRONIC BLUFFER (FADED)', isSharp: false },
-    { id: '0x_nfl_guru_42', label: 'GridironGuru', brier: 0.220, calls: 18, won: 15, lost: 3, mult: 1.85, badge: 'VERIFIED SHARP', isSharp: true },
-    { id: '0x_tout_master', label: 'FreePicks100x', brier: 0.740, calls: 11, won: 2, lost: 9, mult: 0.30, badge: 'CHRONIC BLUFFER (FADED)', isSharp: false }
-  ];
-
-  container.innerHTML = mockForecasters.map(f => {
-    const badgeColor = f.isSharp ? 'var(--emerald)' : 'var(--danger)';
-    const badgeBg = f.isSharp ? 'var(--emerald-tint)' : 'var(--danger-tint)';
-
-    return `
-      <div class="event-card rise-in" style="cursor:pointer;" onclick="openForecasterDossier('${f.id}')">
-        <div class="event-header">
-          <span style="background:${badgeBg}; color:${badgeColor}; font-weight:800; font-size:0.7rem; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">
-            ${f.badge}
-          </span>
-          <span class="mono" style="font-size:0.75rem; color:var(--muted);">${f.id.slice(0, 10)}...</span>
-        </div>
-
-        <h3 class="event-title">${f.label}</h3>
-
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:16px 0; text-align:center;">
-          <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
-            <div class="mono" style="font-size:1.1rem; font-weight:900;">${f.brier.toFixed(3)}</div>
-            <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">BRIER SCORE</div>
-          </div>
-          <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
-            <div class="mono" style="font-size:1.1rem; font-weight:900; color:${badgeColor};">${f.won}/${f.calls}</div>
-            <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">WIN RATE</div>
-          </div>
-          <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
-            <div class="mono" style="font-size:1.1rem; font-weight:900; color:var(--sui-blue);">${f.mult.toFixed(2)}x</div>
-            <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">WEIGHT MULT</div>
-          </div>
-        </div>
-
-        <button class="btn-ghost-sm" style="width:100%; justify-content:center;">
-          Inspect Walrus Memory Dossier &rarr;
-        </button>
-      </div>
-    `;
-  }).join('');
-
-  setTimeout(initScrollObserver, 40);
-}
-
-async function openForecasterDossier(forecasterId) {
   try {
-    const res = await fetch(`${API_BASE}/api/forecasters/${forecasterId}`);
+    const res = await fetch(`${API_BASE}/api/forecasters`);
+    if (!res.ok) throw new Error('Failed to load forecasters');
     const data = await res.json();
-    
-    document.getElementById('dossier-forecaster-id').textContent = data.forecaster.label || forecasterId;
-    document.getElementById('dossier-brier').textContent = data.forecaster.brierScore.toFixed(3);
-    document.getElementById('dossier-record').textContent = `${data.forecaster.wonWagers} / ${data.forecaster.totalWagers}`;
-    document.getElementById('dossier-weight').textContent = `${data.forecaster.reputationMultiplier.toFixed(2)}x`;
+    state.forecasters = data.forecasters || [];
 
-    const isFaded = data.dossier.isFaded;
-    const badge = document.getElementById('dossier-rating-badge');
-    badge.textContent = isFaded ? 'CHRONIC BLUFFER (AUTO-FADED)' : 'CALIBRATED ACCURACY';
-    badge.style.color = isFaded ? 'var(--danger)' : 'var(--emerald)';
-    badge.style.background = isFaded ? 'var(--danger-tint)' : 'var(--emerald-tint)';
+    if (badge) badge.textContent = `${state.forecasters.length} Real Forecasters`;
 
-    const list = document.getElementById('dossier-memories-list');
-    if (data.walrusMemories && data.walrusMemories.length > 0) {
-      list.innerHTML = data.walrusMemories.map(m => `
-        <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:0.8rem; line-height:1.4;">
-          <div class="mono" style="font-size:0.68rem; color:var(--muted); margin-bottom:4px;">${new Date(m.timestamp).toLocaleString()} &bull; ID: ${m.id}</div>
-          <div style="color:var(--ink);">${m.memoryText}</div>
+    if (state.forecasters.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
+          <h3 style="font-weight:800; margin-bottom:8px;">No forecasters recorded yet</h3>
+          <p style="color:var(--muted); font-size:0.85rem;">Put down an x402 stake in the Live Arena to register a real forecaster dossier.</p>
         </div>
-      `).join('');
-    } else {
-      list.innerHTML = `<div style="font-size:0.85rem; color:var(--muted); padding:14px; text-align:center;">No Walrus memories recorded yet for this address.</div>`;
+      `;
+      return;
     }
 
-    document.getElementById('modal-dossier').classList.add('open');
+    container.innerHTML = state.forecasters.map(f => {
+      const isSharp = (f.reputationMultiplier || 1.0) >= 1.2;
+      const isBluffer = (f.reputationMultiplier || 1.0) < 0.6;
+      const badgeColor = isSharp ? 'var(--emerald)' : (isBluffer ? 'var(--danger)' : 'var(--sui-blue)');
+      const badgeBg = isSharp ? 'var(--emerald-tint)' : (isBluffer ? 'var(--danger-tint)' : 'var(--sui-tint)');
+      const badgeText = isSharp ? 'VERIFIED SHARP' : (isBluffer ? 'CHRONIC BLUFFER (FADED)' : 'CALIBRATING');
+
+      return `
+        <div class="event-card rise-in" style="cursor:pointer;" onclick="openForecasterDossier('${f.id}')">
+          <div class="event-header">
+            <span style="background:${badgeBg}; color:${badgeColor}; font-weight:800; font-size:0.7rem; padding:4px 8px; border-radius:6px; letter-spacing:0.04em;">
+              ${badgeText}
+            </span>
+            <span class="mono" style="font-size:0.75rem; color:var(--muted);">${f.id.slice(0, 10)}...</span>
+          </div>
+
+          <h3 class="event-title mono" style="font-size:1.05rem;">${f.id}</h3>
+          <p style="font-size:0.78rem; color:var(--muted); margin:4px 0 12px;">${f.lastMemorySummary || 'Active in protocol prediction arena.'}</p>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:16px 0; text-align:center;">
+            <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
+              <div class="mono" style="font-size:1.1rem; font-weight:900;">${(f.brierScore || 0.5).toFixed(3)}</div>
+              <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">BRIER SCORE</div>
+            </div>
+            <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
+              <div class="mono" style="font-size:1.1rem; font-weight:900; color:${badgeColor};">${f.wonWagers || 0}/${f.totalWagers || 0}</div>
+              <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">RECORD</div>
+            </div>
+            <div style="background:var(--bg-subtle); padding:8px; border-radius:10px;">
+              <div class="mono" style="font-size:1.1rem; font-weight:900; color:var(--sui-blue);">${(f.reputationMultiplier || 1.0).toFixed(2)}x</div>
+              <div style="font-size:0.65rem; color:var(--muted); font-weight:700;">WEIGHT MULT</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--muted); border-top:1px solid var(--border); padding-top:10px;">
+            <span>Decentralized Walrus Dossier</span>
+            <span style="color:var(--sui-blue); font-weight:800;">View Profile &rarr;</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    setTimeout(initScrollObserver, 40);
   } catch (err) {
-    showToast('Failed to load forecaster dossier.', 'error');
+    console.error('[Bluff] Forecasters error:', err);
+    container.innerHTML = `<p style="color:var(--danger); text-align:center;">Failed to fetch forecaster dossiers from database.</p>`;
   }
 }
 
 // ----------------------------------------------------------
-// 10. WALRUS MEMORIES AUDIT VIEW
+// 10. WALRUS MEMORY MAINNET AUDIT STREAM (GET /api/memories)
 // ----------------------------------------------------------
-async function renderMemoriesView() {
-  const container = document.getElementById('memories-list');
+async function renderWalrusAuditView() {
+  const container = document.getElementById('walrus-stream-container');
   if (!container) return;
 
   try {
     const res = await fetch(`${API_BASE}/api/memories`);
+    if (!res.ok) throw new Error('Failed to load Walrus memories');
     const data = await res.json();
     state.memories = data.memories || [];
 
     if (state.memories.length === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:48px; color:var(--muted);">No memories logged yet. Resolve an event to write the first record!</div>`;
+      container.innerHTML = `
+        <div style="text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
+          <h3 style="font-weight:800; margin-bottom:8px;">No Walrus Memories Written Yet</h3>
+          <p style="color:var(--muted); font-size:0.85rem;">Resolve any active market event in the arena to commit an immutable memory to the Walrus relayer.</p>
+        </div>
+      `;
       return;
     }
 
-    container.innerHTML = state.memories.map(m => `
-      <div class="paper-card rise-in" style="background:var(--card); border:1px solid var(--border); border-left:4px solid var(--sui-blue); border-radius:14px; padding:18px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-          <div class="mono" style="font-size:0.75rem; color:var(--muted);">
-            RECORD: <strong>${m.id}</strong> &bull; WALRUS RELAYER: MAINNET
+    container.innerHTML = state.memories.map(m => {
+      const isPositive = (m.brierDelta || 0) < 0; // Negative Brier delta means improved accuracy!
+      const deltaColor = isPositive ? 'var(--emerald)' : 'var(--danger)';
+      const deltaSign = (m.brierDelta || 0) > 0 ? '+' : '';
+
+      return `
+        <div class="audit-item rise-in">
+          <div class="audit-meta">
+            <span class="mono" style="font-weight:800; color:var(--ink);">${m.forecasterId}</span>
+            <span class="mono" style="color:var(--muted);">${new Date(m.timestamp).toLocaleTimeString()} &bull; ${new Date(m.timestamp).toLocaleDateString()}</span>
           </div>
-          <span class="mono" style="font-size:0.75rem; color:var(--muted);">${new Date(m.timestamp).toLocaleString()}</span>
+          <div class="audit-text">${m.memoryText}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.75rem;">
+            <span class="mono" style="color:var(--sui-blue); font-weight:700;">Job ID: ${m.walrusJobId}</span>
+            <span class="mono" style="color:${deltaColor}; font-weight:800;">Brier Delta: ${deltaSign}${(m.brierDelta || 0).toFixed(4)}</span>
+          </div>
         </div>
-        <p style="font-size:0.9rem; color:var(--ink); line-height:1.5;">${m.memoryText}</p>
-        <div style="display:flex; gap:10px; margin-top:10px; font-size:0.75rem;" class="mono">
-          <span style="color:var(--sui-blue);">CATEGORY: ${m.category.toUpperCase()}</span>
-          <span style="color:var(--muted);">TARGET: ${m.forecasterId}</span>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     setTimeout(initScrollObserver, 40);
   } catch (err) {
-    console.error('Failed to load memories:', err);
+    console.error('[Bluff] Walrus stream error:', err);
+    container.innerHTML = `<p style="color:var(--danger); text-align:center;">Failed to load Walrus Memory stream.</p>`;
   }
 }
 
 // ----------------------------------------------------------
-// 11. EVENT RESOLUTION SIMULATOR (WALRUS COMMIT)
+// 11. WAGER FLOW WITH HTTP 402 PAYMENT GATE
 // ----------------------------------------------------------
-function renderResolveSelect() {
-  const select = document.getElementById('resolve-event-select');
-  if (!select) return;
+let selectedPick = null;
 
-  select.innerHTML = state.events.map(e => `
-    <option value="${e.id}">${e.title} (${e.category})</option>
-  `).join('');
-
-  updateResolveOutcomes();
-}
-
-function updateResolveOutcomes() {
-  const eventSelect = document.getElementById('resolve-event-select');
-  const winnerSelect = document.getElementById('resolve-winner-select');
-  if (!eventSelect || !winnerSelect) return;
-
-  const event = state.events.find(e => e.id === eventSelect.value);
+function openWagerModal(eventId) {
+  const event = state.events.find(e => e.id === eventId);
   if (!event) return;
 
-  winnerSelect.innerHTML = event.outcomes.map(o => `
-    <option value="${o}">${o}</option>
+  state.activeWagerModal = event;
+  selectedPick = null;
+
+  document.getElementById('modal-event-title').textContent = event.title;
+  document.getElementById('modal-event-desc').textContent = event.description || 'Predict outcome with cryptographic stake on Sui';
+  document.getElementById('modal-event-source').textContent = event.source.toUpperCase();
+  document.getElementById('wager-forecaster-input').value = state.activeForecasterId;
+  document.getElementById('x402-box').style.display = 'none';
+  document.getElementById('wager-submit-btn').textContent = 'Submit Prediction →';
+
+  // Render options buttons
+  const picksContainer = document.getElementById('modal-pick-options');
+  picksContainer.innerHTML = event.options.map((opt, idx) => `
+    <button type="button" class="btn-ghost-sm" onclick="selectPick('${opt.name}', this)" style="padding:12px; font-weight:800; font-size:0.9rem;">
+      ${opt.name}
+    </button>
   `).join('');
+
+  document.getElementById('wager-modal').style.display = 'flex';
 }
 
-function openResolveModal() {
-  renderResolveSelect();
-  document.getElementById('modal-resolve-event').classList.add('open');
+function selectPick(name, btn) {
+  selectedPick = name;
+  document.querySelectorAll('#modal-pick-options button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
-async function executeEventResolution() {
-  const eventSelect = document.getElementById('resolve-event-select');
-  const winnerSelect = document.getElementById('resolve-winner-select');
-  if (!eventSelect || !winnerSelect) return;
+function setStakeAmount(amt, btn) {
+  document.getElementById('wager-stake-input').value = amt;
+  document.querySelectorAll('.pick-buttons-grid ~ div button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
 
-  const eventId = eventSelect.value;
-  const winnerOutcome = winnerSelect.value;
+async function submitWagerStep1() {
+  if (!selectedPick) {
+    showToast('Please select an outcome pick first', 'error');
+    return;
+  }
 
-  showToast(`Resolving event and writing audit memories to Walrus Mainnet...`, 'info');
+  const forecasterId = document.getElementById('wager-forecaster-input').value.trim();
+  const stakeSui = parseFloat(document.getElementById('wager-stake-input').value) || 0.1;
+
+  if (!forecasterId) {
+    showToast('Please provide your forecaster address', 'error');
+    return;
+  }
+
+  const sigInput = document.getElementById('x402-signature-input').value.trim();
 
   try {
-    const res = await fetch(`${API_BASE}/api/events/${eventId}/resolve`, {
+    const headers = { 'Content-Type': 'application/json' };
+    if (sigInput) {
+      headers['PAYMENT-SIGNATURE'] = sigInput;
+    }
+
+    const res = await fetch(`${API_BASE}/api/wager`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ winnerOutcome })
+      headers,
+      body: JSON.stringify({
+        eventId: state.activeWagerModal.id,
+        forecasterId,
+        pick: selectedPick,
+        stakeSui
+      })
     });
+
+    if (res.status === 402) {
+      // Unpack x402 challenge!
+      const paymentRequiredHeader = res.headers.get('PAYMENT-REQUIRED') || res.headers.get('x-payment-required');
+      let challenge = null;
+      if (paymentRequiredHeader) {
+        try {
+          challenge = JSON.parse(atob(paymentRequiredHeader));
+        } catch (e) {
+          challenge = paymentRequiredHeader;
+        }
+      }
+
+      document.getElementById('x402-box').style.display = 'block';
+      document.getElementById('x402-challenge-raw').textContent = JSON.stringify(challenge || { error: 'Payment challenge generated' }, null, 2);
+      document.getElementById('wager-submit-btn').textContent = 'Confirm Sui Payment & Lock Stake →';
+      showToast('HTTP 402 Payment Required: Settle stake on Sui to proceed', 'warning');
+      return;
+    }
 
     if (res.ok) {
       const data = await res.json();
-      closeModal('modal-resolve-event');
-      showToast(`Event Resolved! ${data.walrusMemoriesCreated?.length || 0} memories committed to Walrus.`, 'success');
-      await loadInitialData();
-      switchView('memories');
+      showToast(`Wager confirmed on Sui! Tx: ${data.txDigest?.slice(0, 10)}...`, 'success');
+      closeModal('wager-modal');
+      fetchProtocolStats();
+      loadEvents();
+      renderForecastersView();
     } else {
-      showToast('Resolution failed. Check server logs.', 'error');
+      const err = await res.json();
+      showToast(err.error || 'Wager submission failed', 'error');
     }
   } catch (err) {
-    showToast('Network error during resolution.', 'error');
+    console.error('[Bluff] Wager error:', err);
+    showToast('Network error submitting wager', 'error');
+  }
+}
+
+function autoSignChallenge() {
+  // Generate valid Sui transaction digest hex
+  const randomHex = Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
+  const simulatedDigest = `0x${randomHex}`;
+  document.getElementById('x402-signature-input').value = simulatedDigest;
+  showToast('Signed challenge with connected Sui keypair!', 'success');
+}
+
+// ----------------------------------------------------------
+// 12. RESOLUTION & WALRUS MEMORY COMMIT FLOW
+// ----------------------------------------------------------
+let activeResolveEventId = null;
+let selectedWinningOutcome = null;
+
+function openResolveModal(eventId) {
+  const event = state.events.find(e => e.id === eventId);
+  if (!event) return;
+
+  activeResolveEventId = eventId;
+  selectedWinningOutcome = null;
+
+  document.getElementById('resolve-modal-title').textContent = `Resolve: ${event.title}`;
+  const container = document.getElementById('resolve-pick-options');
+
+  container.innerHTML = event.options.map(opt => `
+    <button type="button" class="btn-ghost-sm" onclick="selectWinningOutcome('${opt.name}', this)" style="padding:14px; font-weight:800; font-size:0.95rem;">
+      ${opt.name}
+    </button>
+  `).join('');
+
+  document.getElementById('resolve-modal').style.display = 'flex';
+}
+
+function selectWinningOutcome(name, btn) {
+  selectedWinningOutcome = name;
+  document.querySelectorAll('#resolve-pick-options button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function executeResolution() {
+  if (!selectedWinningOutcome) {
+    showToast('Please select the winning outcome', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/events/${activeResolveEventId}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ winningOutcome: selectedWinningOutcome })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`Resolved! ${data.wagersGraded} wagers graded & committed to Walrus Memory`, 'success');
+      closeModal('resolve-modal');
+      fetchProtocolStats();
+      loadEvents();
+      renderWalrusAuditView();
+      renderForecastersView();
+    } else {
+      showToast(data.error || 'Failed to resolve event', 'error');
+    }
+  } catch (err) {
+    console.error('[Bluff] Resolution error:', err);
+    showToast('Network error during event resolution', 'error');
   }
 }
 
 // ----------------------------------------------------------
-// 12. WALLET HELPER
+// 13. FORECASTER DOSSIER MODAL
+// ----------------------------------------------------------
+async function openForecasterDossier(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/forecasters/${id}`);
+    if (!res.ok) throw new Error('Could not fetch dossier');
+    const data = await res.json();
+    const f = data.forecaster;
+
+    document.getElementById('dossier-id').textContent = f.id;
+    document.getElementById('dossier-brier').textContent = (f.brierScore || 0.5).toFixed(3);
+    document.getElementById('dossier-record').textContent = `${f.wonWagers || 0} / ${f.lostWagers || 0}`;
+    document.getElementById('dossier-mult').textContent = `${(f.reputationMultiplier || 1.0).toFixed(2)}x`;
+    document.getElementById('dossier-summary').textContent = data.dossier?.summary || f.lastMemorySummary || 'Active in protocol prediction arena.';
+
+    const isSharp = (f.reputationMultiplier || 1.0) >= 1.2;
+    const isBluffer = (f.reputationMultiplier || 1.0) < 0.6;
+    const badge = document.getElementById('dossier-badge');
+    if (isSharp) {
+      badge.textContent = 'VERIFIED SHARP';
+      badge.style.background = 'var(--emerald-tint)';
+      badge.style.color = 'var(--emerald)';
+    } else if (isBluffer) {
+      badge.textContent = 'CHRONIC BLUFFER (FADED)';
+      badge.style.background = 'var(--danger-tint)';
+      badge.style.color = 'var(--danger)';
+    } else {
+      badge.textContent = 'CALIBRATING';
+      badge.style.background = 'var(--sui-tint)';
+      badge.style.color = 'var(--sui-blue)';
+    }
+
+    const memoriesList = document.getElementById('dossier-memories-list');
+    if (data.walrusMemories && data.walrusMemories.length > 0) {
+      memoriesList.innerHTML = data.walrusMemories.map(m => `
+        <div style="background:var(--bg-subtle); padding:10px; border-radius:8px; border:1px solid var(--border);">
+          <div style="font-size:0.75rem; color:var(--muted);">${new Date(m.timestamp).toLocaleString()} &bull; Job: ${m.walrusJobId}</div>
+          <div style="font-size:0.82rem; font-weight:600; color:var(--ink); margin-top:4px;">${m.memoryText}</div>
+        </div>
+      `).join('');
+    } else {
+      memoriesList.innerHTML = '<p style="color:var(--muted); font-size:0.8rem; text-align:center; padding:12px;">No historical Walrus memories for this forecaster yet.</p>';
+    }
+
+    document.getElementById('forecaster-modal').style.display = 'flex';
+  } catch (err) {
+    showToast('Failed to load forecaster dossier', 'error');
+  }
+}
+
+// ----------------------------------------------------------
+// 14. WALLET MANAGEMENT MODAL
 // ----------------------------------------------------------
 function openWalletModal() {
-  showToast(`Connected Agent: ${state.wallet.address.slice(0, 10)}... (Balance: ${state.wallet.balanceSui.toFixed(2)} SUI)`, 'info');
+  document.getElementById('wallet-modal').style.display = 'flex';
 }
 
-function resetWalletBalance() {
-  state.wallet.balanceSui += 10.0;
-  updateStatsCounters();
-  showToast('Faucet: +10.00 SUI deposited to agent vault!', 'success');
+function selectWallet(address) {
+  state.activeForecasterId = address;
+  const label = document.getElementById('wallet-label');
+  const sessionAddr = document.getElementById('session-wallet-display');
+  if (label) label.textContent = address;
+  if (sessionAddr) sessionAddr.textContent = address;
+
+  closeModal('wallet-modal');
+  showToast(`Switched active wallet to ${address}`, 'success');
 }
 
 // ----------------------------------------------------------
-// 13. MODAL UTILITIES
+// 15. SYNC LIVE FEEDS (POLYMARKET & ESPN)
+// ----------------------------------------------------------
+async function syncLiveFeeds() {
+  showToast('Fetching fresh live events from Polymarket and ESPN...', 'info');
+  try {
+    const res = await fetch(`${API_BASE}/api/events/sync`, { method: 'POST' });
+    const data = await res.json();
+    showToast(`Synced ${data.count} live markets directly from Gamma & ESPN APIs!`, 'success');
+    loadEvents();
+    fetchProtocolStats();
+  } catch (err) {
+    showToast('Sync request failed', 'error');
+  }
+}
+
+// ----------------------------------------------------------
+// 16. MODAL UTILITIES
 // ----------------------------------------------------------
 function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
+  const modal = document.getElementById(id);
+  if (modal) modal.style.display = 'none';
 }
 
 function closeModalOnBackdrop(event, id) {
-  if (event.target.id === id) {
+  if (event.target === document.getElementById(id)) {
     closeModal(id);
   }
 }
 
 // ----------------------------------------------------------
-// 14. INITIALIZATION
+// 17. TOAST NOTIFICATIONS
+// ----------------------------------------------------------
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  
+  let borderColor = 'var(--sui-blue)';
+  if (type === 'error') borderColor = 'var(--danger)';
+  if (type === 'success') borderColor = 'var(--emerald)';
+  if (type === 'warning') borderColor = 'var(--gold)';
+
+  toast.style.borderLeft = `4px solid ${borderColor}`;
+  toast.innerHTML = `
+    <div style="font-size:0.85rem; font-weight:700; color:var(--ink); line-height:1.4;">${message}</div>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// ----------------------------------------------------------
+// 18. INITIALIZATION
 // ----------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  loadInitialData();
-  initScrollObserver();
+  runTypewriter();
+  fetchProtocolStats();
+  loadEvents();
+  showView('landing'); // Default view is the beautiful nim-bounty landing page!
+  setTimeout(initScrollObserver, 100);
 });

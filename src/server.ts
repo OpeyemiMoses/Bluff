@@ -89,6 +89,21 @@ app.get('/api/events/:id', (req: Request, res: Response) => {
   }
 });
 
+// GET /api/stats - Real calculated protocol metrics directly from database
+app.get('/api/stats', (req: Request, res: Response) => {
+  const stats = dbService.getProtocolStats();
+  res.json(stats);
+});
+
+// GET /api/forecasters - List all real forecasters from database
+app.get('/api/forecasters', (req: Request, res: Response) => {
+  const forecasters = dbService.listForecasters(50);
+  res.json({
+    total: forecasters.length,
+    forecasters
+  });
+});
+
 // GET /api/forecasters/:id - Forecaster profile, Brier calibration, and Walrus memories
 app.get('/api/forecasters/:id', async (req: Request, res: Response) => {
   const forecasterId = String(req.params.id);
