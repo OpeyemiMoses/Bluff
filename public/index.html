@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bluff — Adversarial Prediction Arbiter with x402 & Walrus Memory</title>
   <meta name="description" content="Talk is cheap. Back your hot takes with machine-payable Sui micro-stakes via x402, or get permanently exposed by Walrus Memory." />
 
-  <!-- Google Fonts: Work Sans, Instrument Serif, Geist Mono -->
+  <!-- Google Fonts: Geist, Geist Mono, Instrument Serif -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -18,342 +18,299 @@
   <!-- Floating Toast Notifications Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- Sticky Navbar -->
-  <nav class="navbar" id="navbar">
-    <div class="nav-container">
-      <div class="nav-logo" onclick="showView('landing')" style="cursor:pointer;">
-        <div class="logo-badge">B</div>
-        <span class="logo-text">Bluff<span class="serif-italic">.ai</span></span>
+  <!-- Keel Glass Header Shell -->
+  <header class="bar-shell" id="navbar">
+    <div class="bar">
+      <!-- Left: Brand Logo -->
+      <div class="bar-brand" onclick="showView('landing')" style="cursor:pointer;">
+        <div class="brand-badge">B</div>
+        <span class="brand-text">Bluff<span class="serif-accent">.ai</span></span>
       </div>
 
-      <!-- Desktop Center Navigation Links (landing page view) -->
-      <div class="nav-center-links desktop-nav" id="landing-nav-links">
-        <button class="nav-link-btn" onclick="scrollToSection('how-it-works')">How It Works</button>
-        <button class="nav-link-btn" onclick="scrollToSection('features')">Protections</button>
-        <button class="nav-link-btn" onclick="scrollToSection('faq')">FAQ</button>
-      </div>
+      <!-- Center: Floating Pill Navigation -->
+      <nav class="nav" id="landing-nav-links">
+        <button onclick="scrollToSection('how')">How it works</button>
+        <button onclick="scrollToSection('safety')">Protections</button>
+        <button onclick="scrollToSection('live')">Live Arena</button>
+        <button onclick="scrollToSection('faq')">FAQ</button>
+        <button onclick="showView('app')">Console</button>
+      </nav>
 
-      <!-- App Console Navigation Links (app console view) -->
-      <div class="nav-center-links desktop-nav" id="app-nav-links" style="display:none;">
-        <button class="nav-link-btn active" id="app-nav-arena" onclick="showAppTab('arena')">Live Arena</button>
-        <button class="nav-link-btn" id="app-nav-consensus" onclick="showAppTab('consensus')">Consensus & Alpha</button>
-        <button class="nav-link-btn" id="app-nav-forecasters" onclick="showAppTab('forecasters')">Forecasters</button>
-        <button class="nav-link-btn" id="app-nav-memories" onclick="showAppTab('memories')">Walrus Audit</button>
-      </div>
+      <!-- App Console Navigation Links (active on app console view) -->
+      <nav class="nav" id="app-nav-links" style="display:none;">
+        <button class="active" id="app-nav-arena" onclick="showAppTab('arena')">Arena</button>
+        <button id="app-nav-consensus" onclick="showAppTab('consensus')">Consensus</button>
+        <button id="app-nav-forecasters" onclick="showAppTab('forecasters')">Dossiers</button>
+        <button id="app-nav-memories" onclick="showAppTab('memories')">Walrus Audit</button>
+      </nav>
 
-      <!-- Right Actions -->
-      <div class="nav-right-actions">
-        <!-- Light / Dark Theme Switcher Button -->
-        <button class="btn-theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Light/Dark Theme">
-          <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        </button>
-
-        <!-- Wallet Connect Button -->
-        <button class="btn-ghost-sm mono" id="wallet-connect-btn" onclick="openWalletModal()">
-          <span class="tag-pulse-dot" style="background:var(--sui-blue); box-shadow:0 0 0 3px var(--sui-tint);"></span>
+      <!-- Right: Network Status, Wallet & App CTA -->
+      <div class="bar-right">
+        <div class="net-pill mono">
+          <span class="net-dot"></span> Sui · x402
+        </div>
+        <button class="btn-wallet mono" id="wallet-connect-btn" onclick="openWalletModal()">
           <span id="wallet-label">0x_sharp_analyst_001</span>
         </button>
-
-        <!-- Launch App / Back to Landing Action -->
-        <button class="btn-primary-sm desktop-only" id="nav-action-btn" onclick="toggleMainView()">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span id="nav-action-text">Launch App Console</span>
+        <button class="btn-launch-nav" id="nav-action-btn" onclick="toggleMainView()">
+          <span id="nav-action-text">Open App ↗</span>
         </button>
       </div>
     </div>
-  </nav>
+  </header>
 
   <!-- ========================================== -->
   <!-- VIEW 1: LANDING PAGE                       -->
   <!-- ========================================== -->
   <div id="view-landing" class="page-view">
     
-    <!-- Hero Section -->
-    <section class="hero-section">
-      <div class="hero-container">
+    <!-- Hero Front Section with 3D Question Mark Canvas -->
+    <section class="front">
+      <div class="front-frame">
+        <div class="front-copy">
+          <div class="front-tag">
+            Live on Sui Mainnet &bull; Walrus Memory
+          </div>
+          <h1>
+            Back your hot takes.<br>
+            <em class="teal-serif">Never bluffed.</em>
+          </h1>
+          <p class="front-sub">
+            The Adversarial Prediction Arbiter. Put down a machine-payable HTTP 402 micro-stake on Sui, or get permanently exposed by Walrus Memory. Sharps earn reputation; chronic bluffers get faded.
+          </p>
+          <div class="cta">
+            <button class="btn" onclick="showView('app')">Open the app <i>↗</i></button>
+            <button class="btn ghost" onclick="scrollToSection('how')">How it works</button>
+          </div>
+        </div>
+
+        <div class="front-orb">
+          <canvas class="orb" id="hero-question-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Drop Numbers Ribbon (Live Database Metrics) -->
+    <section class="drop">
+      <div class="drop-item">
+        <strong id="landing-stat-events">27<b>+</b></strong>
+        <span>Live prediction markets streamed from Polymarket Gamma &amp; ESPN</span>
+      </div>
+      <div class="drop-item">
+        <strong id="landing-stat-staked">1.75<b>SUI</b></strong>
+        <span>Settled micro-stakes locked via machine-payable HTTP 402</span>
+      </div>
+      <div class="drop-item">
+        <strong>0.30<b>x</b></strong>
+        <span>Brier fade penalty applied to chronic bluffers</span>
+      </div>
+      <div class="drop-item">
+        <strong id="landing-stat-memories">5<b>Blobs</b></strong>
+        <span>Immutable dossiers committed to @mysten-incubation/memwal</span>
+      </div>
+    </section>
+
+    <!-- How It Works Chapter with Dynamic Step Readout -->
+    <section class="chapter" id="how">
+      <span class="chapter-tag">How it works</span>
+      <h2>A learning loop that lives <em class="teal-serif">outside cheap talk.</em></h2>
+      <p class="chapter-lede">Talk is cheap. When forecasters, sports commentators, and autonomous AI agents back their picks with machine-payable Sui micro-stakes, reputation is quadratic, immutable, and permanently auditable.</p>
+
+      <div class="steps-x">
+        <ul class="stack" id="steps-stack">
+          <li class="on" onclick="selectStep(0)">
+            <button type="button">
+              <span class="k">01</span>
+              <span>Pick Live Market</span>
+            </button>
+            <div class="stack-body">
+              <h3>Real events streamed in real time.</h3>
+              <p>Forecasters choose active events streamed from Polymarket Gamma REST API or ESPN NFL &amp; soccer scoreboards. Zero mock data.</p>
+            </div>
+          </li>
+          <li onclick="selectStep(1)">
+            <button type="button">
+              <span class="k">02</span>
+              <span>x402 Sui Micro-Stake</span>
+            </button>
+            <div class="stack-body">
+              <h3>Machine-payable financial skin in the game.</h3>
+              <p>Bluff returns an HTTP 402 challenge. Autonomous agents sign and pay micro-stakes on Sui mainnet with zero middleman delay.</p>
+            </div>
+          </li>
+          <li onclick="selectStep(2)">
+            <button type="button">
+              <span class="k">03</span>
+              <span>Arbitrate &amp; Divergence</span>
+            </button>
+            <div class="stack-body">
+              <h3>Isolate sharp alpha from bookmaker odds.</h3>
+              <p>Real stake-weighted consensus reveals where knowledgeable sharps diverge from bookmaker odds, generating provable predictive alpha.</p>
+            </div>
+          </li>
+          <li onclick="selectStep(3)">
+            <button type="button">
+              <span class="k">04</span>
+              <span>Brier Score Calibration</span>
+            </button>
+            <div class="stack-body">
+              <h3>Exponential boost or chronic bluffer fade.</h3>
+              <p>Quadratic Brier scoring grades accuracy: sharps are amplified up to 2.50x consensus weight; chronic bluffers are faded to 0.30x.</p>
+            </div>
+          </li>
+          <li onclick="selectStep(4)">
+            <button type="button">
+              <span class="k">05</span>
+              <span>Walrus Memory Seal</span>
+            </button>
+            <div class="stack-body">
+              <h3>Immutable decentralized history.</h3>
+              <p>Every call, confidence, and Brier delta is permanently committed to Walrus Memory via @mysten-incubation/memwal relayer.</p>
+            </div>
+          </li>
+        </ul>
+
+        <div class="readout" id="step-readout">
+          <div class="readout-k" id="readout-tag">STEP 01 &bull; INGESTION</div>
+          <strong id="readout-figure">100%</strong>
+          <div class="readout-c" id="readout-caption">Live real-time market data streamed from Polymarket Gamma and ESPN scoreboards.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Built-in Protections Grid -->
+    <section class="chapter" id="safety">
+      <span class="chapter-tag">Built-in Protections</span>
+      <h2>What keeps forecasters <em class="teal-serif">honest.</em></h2>
+      <dl class="guards">
+        <div>
+          <dt>Anti-Sybil Micro-Stakes</dt>
+          <dd>HTTP 402 machine-payable micropayments enforce financial skin in the game. Zero-cost bot farms cannot fabricate fake consensus.</dd>
+        </div>
+        <div>
+          <dt>Exponential Brier Fade</dt>
+          <dd>Chronic bluffers with Brier scores above 0.50 are automatically faded down to 0.30x weight. Verified sharps are amplified up to 2.50x.</dd>
+        </div>
+        <div>
+          <dt>Machine-Payable x402 Headers</dt>
+          <dd>Standardized HTTP 402 base64 payment challenges allow autonomous AI agents and bots to wager seamlessly without browser extensions.</dd>
+        </div>
+        <div>
+          <dt>Walrus Mainnet Memory Dossiers</dt>
+          <dd>All historical calls, wins, losses, and Brier deltas are indexed on Walrus decentralized storage. Forecaster reputation is permanent and verifiable.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- Live Arena Chapter Preview -->
+    <section class="chapter" id="live">
+      <span class="chapter-tag">Running now</span>
+      <h2>Live Prediction Arena. <em class="teal-serif">Real-time markets.</em></h2>
+      <p class="chapter-lede">Streamed directly from Polymarket Gamma API and ESPN scoreboards. Forecasters put down stakes, earn reputation, or get permanently faded.</p>
+      
+      <div class="console">
+        <div class="console-bar">
+          <div class="console-status">
+            <span class="live-dot"></span>
+            <span>Sui Mainnet &bull; Polymarket Gamma &amp; ESPN Live Scoreboards</span>
+          </div>
+          <button class="btn ghost" style="padding:6px 16px; font-size:12px;" onclick="showView('app')">Open Full Console ↗</button>
+        </div>
         
-        <div class="hero-tag rise-in">
-          <span class="tag-pulse-dot"></span> LIVE SUI MAINNET &bull; WALRUS MEMORY &bull; x402 AGENT PAYMENTS
-        </div>
-
-        <h1 class="hero-title rise-in">
-          Back your hot takes <br />
-          the <span class="typewriter-box"><span id="typewriter-text" class="serif-italic">provable</span><span class="typewriter-cursor">|</span></span> way
-        </h1>
-
-        <p class="hero-sub rise-in">
-          The Adversarial Prediction Arbiter. Put down a machine-payable <strong>x402 micro-stake on Sui</strong>, 
-          or get permanently exposed by <strong>Walrus Memory</strong>. Sharps get amplified; chronic bluffers get faded.
-        </p>
-
-        <!-- Process Flow Pills Row -->
-        <div class="flow-pills-row rise-in">
-          <div class="flow-pill">
-            <span class="mono">01</span> Pick Live Market
-          </div>
-          <span class="flow-arrow">&rarr;</span>
-          <div class="flow-pill active">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            02 Settle x402 Sui Stake
-          </div>
-          <span class="flow-arrow">&rarr;</span>
-          <div class="flow-pill">
-            <span class="mono">03</span> Audit on Walrus Mainnet
-          </div>
-        </div>
-
-        <!-- Hero Action Buttons -->
-        <div class="hero-ctas rise-in">
-          <button class="btn-primary-lg" onclick="showView('app')">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Launch App Console
-          </button>
-          <button class="btn-secondary-lg hide-on-mobile" onclick="scrollToSection('how-it-works')">
-            Explore Architecture
-          </button>
-          <button class="btn-ghost-sm hide-on-mobile" onclick="syncLiveFeeds()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="margin-right:6px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-            Sync Feeds
-          </button>
-        </div>
-
-        <!-- Stats Card Ribbon Container (100% Live Database Data) -->
-        <div class="stats-card-container rise-in">
-          <div class="stat-item">
-            <div class="stat-number" id="landing-stat-events">0</div>
-            <div class="stat-label">LIVE MARKETS (POLY + ESPN)</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number" id="landing-stat-staked" style="color:var(--gold);">0 SUI</div>
-            <div class="stat-label">x402 STAKES LOCKED</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number" id="landing-stat-memories" style="color:var(--sui-blue);">0</div>
-            <div class="stat-label">WALRUS MAINNET MEMORIES</div>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number" id="landing-stat-forecasters" style="color:var(--emerald);">0</div>
-            <div class="stat-label">FORECASTERS TRACKED</div>
-          </div>
-        </div>
-
-        <p class="stats-subcaption">&bull; Powered by Tatum Sui RPC Gateway &bull; Walrus Memory Relayer &bull; 100% live database</p>
-
-      </div>
-    </section>
-
-    <!-- How It Works Section (5 Step Cards Grid) -->
-    <section class="section-padded" id="how-it-works">
-      <div class="section-header rise-in">
-        <h2 class="section-title">How it works</h2>
-        <p class="section-sub">From market selection to immutable Walrus Memory proof in five simple steps</p>
-      </div>
-
-      <div class="steps-grid">
-        <div class="step-card rise-in">
-          <div class="step-badge">1</div>
-          <div style="flex:1; min-width:0;">
-            <div class="step-tag">SELECT</div>
-            <h3 class="step-title">Pick Live Market</h3>
-            <p class="step-desc">Forecasters choose a real event streamed directly from Polymarket Gamma REST API or live ESPN fixtures.</p>
-          </div>
-        </div>
-
-        <div class="step-card rise-in">
-          <div class="step-badge">2</div>
-          <div style="flex:1; min-width:0;">
-            <div class="step-tag">CHALLENGE</div>
-            <h3 class="step-title">x402 Payment Gate</h3>
-            <p class="step-desc">Bluff throws an HTTP 402 with base64 challenge. Micro-stakes eliminate zero-cost sybil spam and bot manipulation.</p>
-          </div>
-        </div>
-
-        <div class="step-card rise-in">
-          <div class="step-badge">3</div>
-          <div style="flex:1; min-width:0;">
-            <div class="step-tag">SETTLE</div>
-            <h3 class="step-title">Lock Sui Micro-Stake</h3>
-            <p class="step-desc">Agent or user pays on Sui mainnet via Tatum Gateway. PAYMENT-SIGNATURE header confirms settlement with 0 middleman delay.</p>
-          </div>
-        </div>
-
-        <div class="step-card rise-in">
-          <div class="step-badge">4</div>
-          <div style="flex:1; min-width:0;">
-            <div class="step-tag">GRADE</div>
-            <h3 class="step-title">Resolve &amp; Brier Score</h3>
-            <p class="step-desc">Official outcome resolves the wager. Quadratic Brier scoring grades accuracy: sharps earn reputation, bluffers get penalized.</p>
-          </div>
-        </div>
-
-        <div class="step-card rise-in">
-          <div class="step-badge">5</div>
-          <div style="flex:1; min-width:0;">
-            <div class="step-tag">COMMIT</div>
-            <h3 class="step-title">Walrus Memory Dossier</h3>
-            <p class="step-desc">Prediction record and calibration shift are committed permanently to Walrus Memory. The history can never be rewritten.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Built-in Protections Grid (2x2 SVG Icon Cards) -->
-    <section class="section-padded bg-subtle" id="features">
-      <div class="section-header rise-in">
-        <h2 class="section-title">Built-in Protections</h2>
-        <p class="section-sub">Every prediction market ships with these arbiter safeguards</p>
-      </div>
-
-      <div class="protections-grid">
-        <div class="protection-card rise-in">
-          <div class="icon-box icon-emerald">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3 class="prot-title">Anti-Sybil Micro-Stakes</h3>
-          <p class="prot-desc">x402 machine-payable micropayments enforce financial skin in the game. Zero-cost bot farms cannot fabricate fake consensus.</p>
-        </div>
-
-        <div class="protection-card rise-in">
-          <div class="icon-box icon-emerald">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/></svg>
-          </div>
-          <h3 class="prot-title">Exponential Brier Fade</h3>
-          <p class="prot-desc">Chronic bluffers with Brier scores above 0.50 are automatically faded down to 0.30x weight. Verified sharps are amplified up to 2.50x.</p>
-        </div>
-
-        <div class="protection-card rise-in">
-          <div class="icon-box icon-purple">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          </div>
-          <h3 class="prot-title">Machine-Payable x402 Headers</h3>
-          <p class="prot-desc">Standardized PAYMENT-REQUIRED HTTP 402 base64 challenges allow autonomous AI agents and bots to wager seamlessly without browser extensions.</p>
-        </div>
-
-        <div class="protection-card rise-in">
-          <div class="icon-box icon-gold">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <h3 class="prot-title">Walrus Mainnet Memory Dossiers</h3>
-          <p class="prot-desc">All historical calls, wins, losses, and Brier deltas are indexed on Walrus decentralized storage. Forecaster reputation is permanent and verifiable.</p>
+        <div class="events-grid" id="landing-events-grid" style="margin-bottom:24px;">
+          <!-- Injected dynamically with live events -->
         </div>
       </div>
     </section>
 
     <!-- FAQ Accordion Section -->
-    <section class="section-padded" id="faq">
-      <div class="section-header rise-in">
-        <h2 class="section-title">FAQ</h2>
-        <p class="section-sub">Common questions about Bluff and its architecture</p>
+    <section class="chapter" id="faq">
+      <span class="chapter-tag">Fair questions</span>
+      <h2>Everything you need to know about <em class="teal-serif">Bluff.</em></h2>
+      
+      <div class="faq">
+        <details>
+          <summary>What is Bluff?</summary>
+          <p>Bluff is an Adversarial Prediction Arbiter designed to penalize cheap talk. It bridges live sports and prediction markets with HTTP 402 micro-stakes on Sui and immutable memory audit trails powered by Walrus Memory. Forecasters who make accurate calls have their consensus weight boosted; chronic bluffers are automatically faded.</p>
+        </details>
+
+        <details>
+          <summary>How does the x402 Sui payment protocol work?</summary>
+          <p>When an agent or client submits a wager to <code>/api/wager</code> without payment, Bluff responds with an HTTP 402 Payment Required status and a <code>PAYMENT-REQUIRED</code> header containing a base64 Sui payment challenge. The caller signs and submits the micro-stake on Sui, returning the transaction digest in the <code>PAYMENT-SIGNATURE</code> header for instant verification.</p>
+        </details>
+
+        <details>
+          <summary>How does Walrus Memory track forecasters?</summary>
+          <p>Whenever a market resolves, Bluff commits an immutable memory record to the Walrus Memory Relayer via <code>@mysten-incubation/memwal</code>. Each record stores the forecaster ID, category, outcome, calibration shift, and quadratic Brier score. This creates a permanent decentralized track record that cannot be deleted or manipulated.</p>
+        </details>
+
+        <details>
+          <summary>Where does the market data come from?</summary>
+          <p>Bluff ingests 100% live market events from the Polymarket Gamma REST API (crypto, economics, politics) and real-time ESPN Scoreboard APIs for live NFL and soccer fixtures. There is zero simulated or mock data.</p>
+        </details>
+
+        <details>
+          <summary>What happens when a bluffer makes terrible predictions?</summary>
+          <p>Bluff computes each forecaster's cumulative Brier score. Forecasters whose accuracy is worse than random chance have their reputation multiplier crushed down to 0.30x. The consensus engine actively fades their calls, while verified sharps receive up to a 2.50x consensus amplifier.</p>
+        </details>
       </div>
+    </section>
 
-      <div class="faq-container">
-        <div class="faq-item rise-in">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>What is Bluff?</span>
-            <span class="faq-toggle">+</span>
-          </button>
-          <div class="faq-answer">
-            <p>Bluff is an Adversarial Prediction Arbiter designed to penalize cheap talk. It bridges live sports and prediction markets with HTTP 402 micro-stakes on Sui and immutable memory audit trails powered by Walrus Memory. Forecasters who make accurate calls have their consensus weight boosted; chronic bluffers are automatically faded.</p>
-          </div>
-        </div>
-
-        <div class="faq-item rise-in">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>How does the x402 Sui payment protocol work?</span>
-            <span class="faq-toggle">+</span>
-          </button>
-          <div class="faq-answer">
-            <p>When an agent or client submits a wager to <code>/api/wager</code> without payment, Bluff responds with an HTTP 402 Payment Required status and a <code>PAYMENT-REQUIRED</code> header containing a base64 Sui payment challenge. The caller signs and submits the micro-stake on Sui, returning the transaction digest in the <code>PAYMENT-SIGNATURE</code> header for instant verification.</p>
-          </div>
-        </div>
-
-        <div class="faq-item rise-in">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>How does Walrus Memory track forecasters?</span>
-            <span class="faq-toggle">+</span>
-          </button>
-          <div class="faq-answer">
-            <p>Whenever a market resolves, Bluff commits an immutable memory record to the Walrus Memory Relayer via <code>@mysten-incubation/memwal</code>. Each record stores the forecaster ID, category, outcome, calibration shift, and quadratic Brier score. This creates a permanent decentralized track record that cannot be deleted or manipulated.</p>
-          </div>
-        </div>
-
-        <div class="faq-item rise-in">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Where does the market data come from?</span>
-            <span class="faq-toggle">+</span>
-          </button>
-          <div class="faq-answer">
-            <p>Bluff ingests 100% live market events from the Polymarket Gamma REST API (crypto, economics, politics) and real-time ESPN Scoreboard APIs for live NFL and soccer fixtures. There is zero simulated or mock data.</p>
-          </div>
-        </div>
-
-        <div class="faq-item rise-in">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>What happens when a bluffer makes terrible predictions?</span>
-            <span class="faq-toggle">+</span>
-          </button>
-          <div class="faq-answer">
-            <p>Bluff computes each forecaster's cumulative Brier score. Forecasters whose accuracy is worse than random chance have their reputation multiplier crushed down to 0.30x. The consensus engine actively fades their calls, while verified sharps receive up to a 2.50x consensus amplifier.</p>
-          </div>
+    <!-- Ender Frame Section -->
+    <section class="ender">
+      <div class="ender-frame">
+        <h2>The truth is already provable.<br><em class="teal-serif">Put your stake where your mouth is.</em></h2>
+        <div class="cta">
+          <button class="btn" onclick="showView('app')">Open the app <i>↗</i></button>
+          <button class="btn ghost" onclick="showAppTab('memories')">See Walrus audit stream</button>
         </div>
       </div>
     </section>
 
-    <!-- Landing Page Footer -->
-    <footer class="landing-footer">
-      <div class="footer-container">
-        
-        <div class="footer-top-row">
-          <!-- Brand Column -->
-          <div class="footer-brand-col">
-            <div class="footer-logo">
-              <div class="logo-badge">B</div>
-              <span class="logo-text">Bluff<span class="serif-italic">.ai</span></span>
-            </div>
-            <p class="footer-tagline">
-              Adversarial prediction arbiter powered by x402 on Sui and Walrus Memory. 
-              Talk is cheap. Back your hot takes or get permanently exposed.
-            </p>
-            <div class="footer-hackathon-badge">
-              <span class="badge-pulse"></span> Built for <strong>Tatum x Walrus Memory Hackathon 2026</strong>
-            </div>
+    <!-- Site Footer with Huge Watermark Bluff -->
+    <footer class="site-foot">
+      <div class="foot-top">
+        <div class="foot-brand">
+          <div class="bar-brand" onclick="showView('landing')">
+            <div class="brand-badge">B</div>
+            <span class="brand-text">Bluff<span class="serif-accent">.ai</span></span>
           </div>
-
-          <!-- Quick Navigation Links Column -->
-          <div class="footer-links-col">
-            <div class="footer-col-title">Navigation</div>
-            <button class="footer-link-btn" onclick="scrollToSection('how-it-works')">How It Works</button>
-            <button class="footer-link-btn" onclick="scrollToSection('features')">Protections</button>
-            <button class="footer-link-btn" onclick="scrollToSection('faq')">FAQ</button>
-            <button class="footer-link-btn" onclick="showView('app')">Launch App Console</button>
-          </div>
-
-          <!-- Open Source GitHub Column -->
-          <div class="footer-github-col">
-            <div class="footer-col-title">Open Source</div>
-            <p style="font-size:0.82rem; color:var(--muted); margin-bottom:14px; line-height:1.5;">
-              Bluff is open-source software built with TypeScript, Express, SQLite, Sui, and Walrus. View source or star on GitHub.
-            </p>
-            <a href="https://github.com/OpeyemiMoses/Bluff.git" target="_blank" rel="noopener noreferrer" class="btn-github-footer">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-              <span>View Source on GitHub &nearr;</span>
-            </a>
-          </div>
-
-        </div>
-
-        <div class="footer-bottom-row">
-          <div class="footer-copy">
-            &copy; 2026 Bluff. Built for the Tatum x Walrus Memory Hackathon.
-          </div>
-          <div class="footer-network-badge">
-            <span class="net-dot"></span> Sui Mainnet &bull; Walrus Memory Mainnet
+          <p>
+            Adversarial prediction arbiter powered by machine-payable x402 on Sui and Walrus Memory. Back your hot takes or get permanently exposed.
+          </p>
+          <div style="font-family:var(--mono); font-size:12px; color:var(--teal); display:inline-flex; align-items:center; gap:8px;">
+            <span class="net-dot"></span> Built for Tatum x Walrus Memory Hackathon 2026
           </div>
         </div>
 
+        <div class="foot-cols">
+          <div>
+            <h4>Architecture</h4>
+            <button onclick="scrollToSection('how')">How it works</button>
+            <button onclick="scrollToSection('safety')">Protections</button>
+            <button onclick="showAppTab('consensus')">Consensus &amp; Alpha</button>
+            <button onclick="showAppTab('memories')">Walrus Dossiers</button>
+          </div>
+          <div>
+            <h4>Protocols</h4>
+            <a href="https://relayer.memory.walrus.xyz" target="_blank" rel="noopener noreferrer">Walrus Relayer ↗</a>
+            <a href="https://tatum.io" target="_blank" rel="noopener noreferrer">Tatum Sui RPC ↗</a>
+            <a href="https://polymarket.com" target="_blank" rel="noopener noreferrer">Polymarket Gamma ↗</a>
+            <a href="https://espn.com" target="_blank" rel="noopener noreferrer">ESPN Scoreboards ↗</a>
+          </div>
+          <div>
+            <h4>Source</h4>
+            <a href="https://github.com/OpeyemiMoses/Bluff.git" target="_blank" rel="noopener noreferrer">GitHub Repo ↗</a>
+            <button onclick="showView('app')">App Console</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot-word">Bluff</div>
+
+      <div class="foot-bottom">
+        <span>&copy; 2026 Bluff. Built for the Tatum x Walrus Memory Hackathon.</span>
+        <span>Sui Mainnet &bull; Walrus Memory Mainnet &bull; x402 Micropayments</span>
       </div>
     </footer>
 
@@ -520,7 +477,7 @@
   <!-- ========================================== -->
   <!-- COLLAPSIBLE UP-TAB BOTTOM DOCK             -->
   <!-- ========================================== -->
-  <div class="dock-container" id="dock-container">
+  <div class="dock-container" id="dock-container" style="display:none;">
     <div class="dock-wrapper" id="dock-wrapper">
       
       <!-- Dock Header Bar (Always visible at bottom) -->

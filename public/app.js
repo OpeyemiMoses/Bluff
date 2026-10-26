@@ -25,40 +25,291 @@ const state = {
 };
 
 // ----------------------------------------------------------
-// 1. TYPEWRITER ANIMATION (HERO SECTION)
+// 1. 3D QUESTION MARK PARTICLE ORB (Interactive with mouse)
+// Keel-inspired interactive particle canvas with Question Mark geometry
 // ----------------------------------------------------------
-const typewriterWords = ['provable', 'unbluffable', 'verifiable', 'sovereign', 'adversarial'];
-let wordIdx = 0;
-let charIdx = 0;
-let isDeleting = false;
-let typewriterTimer = null;
+function initQuestionMarkOrb() {
+  const canvas = document.getElementById('hero-question-canvas');
+  if (!canvas) return;
 
-function runTypewriter() {
-  const target = document.getElementById('typewriter-text');
-  if (!target) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-  const currentWord = typewriterWords[wordIdx];
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (isDeleting) {
-    charIdx--;
-    target.textContent = currentWord.substring(0, charIdx);
+  // Cubic Bezier interpolation
+  function bezier(p0, p1, p2, p3, t) {
+    const u = 1 - t;
+    const tt = t * t;
+    const uu = u * u;
+    const uuu = uu * u;
+    const ttt = tt * t;
+    return {
+      x: uuu * p0[0] + 3 * uu * t * p1[0] + 3 * u * tt * p2[0] + ttt * p3[0],
+      y: uuu * p0[1] + 3 * uu * t * p1[1] + 3 * u * tt * p2[1] + ttt * p3[1]
+    };
+  }
+
+  // 1. Generate 3D Question Mark Points
+  const qPoints = [];
+  
+  // Upper Arc (loop over crest)
+  for (let i = 0; i < 420; i++) {
+    const t = i / 420;
+    const pt = bezier([-0.35, 0.35], [-0.48, 0.78], [0.12, 0.98], [0.46, 0.65], t);
+    const phi = Math.random() * Math.PI * 2;
+    const rad = Math.random() * 0.055;
+    qPoints.push({
+      x: pt.x + rad * Math.cos(phi),
+      y: pt.y + rad * Math.sin(phi),
+      z: (Math.random() - 0.5) * 0.16,
+      teal: Math.random() < 0.30,
+      size: 0.8 + Math.random() * 1.5
+    });
+  }
+
+  // Inward hook & neck
+  for (let i = 0; i < 280; i++) {
+    const t = i / 280;
+    const pt = bezier([0.46, 0.65], [0.50, 0.35], [0.16, 0.12], [0.0, -0.05], t);
+    const phi = Math.random() * Math.PI * 2;
+    const rad = Math.random() * 0.05;
+    qPoints.push({
+      x: pt.x + rad * Math.cos(phi),
+      y: pt.y + rad * Math.sin(phi),
+      z: (Math.random() - 0.5) * 0.16,
+      teal: Math.random() < 0.30,
+      size: 0.8 + Math.random() * 1.5
+    });
+  }
+
+  // Straight stem
+  for (let i = 0; i < 160; i++) {
+    const t = i / 160;
+    const pt = bezier([0.0, -0.05], [-0.02, -0.15], [0.0, -0.22], [0.0, -0.32], t);
+    const phi = Math.random() * Math.PI * 2;
+    const rad = Math.random() * 0.045;
+    qPoints.push({
+      x: pt.x + rad * Math.cos(phi),
+      y: pt.y + rad * Math.sin(phi),
+      z: (Math.random() - 0.5) * 0.16,
+      teal: Math.random() < 0.35,
+      size: 0.8 + Math.random() * 1.5
+    });
+  }
+
+  // Dot sphere cluster at (0, -0.62)
+  for (let i = 0; i < 150; i++) {
+    const phi = Math.random() * Math.PI * 2;
+    const costheta = Math.random() * 2 - 1;
+    const theta = Math.acos(costheta);
+    const r = 0.09 * Math.cbrt(Math.random());
+    qPoints.push({
+      x: r * Math.sin(theta) * Math.cos(phi),
+      y: -0.62 + r * Math.sin(theta) * Math.sin(phi),
+      z: r * Math.cos(theta),
+      teal: Math.random() < 0.40,
+      size: 0.9 + Math.random() * 1.6
+    });
+  }
+
+  // 2. Surrounding Orbital Spiral Ring
+  const ringPoints = Array.from({ length: 320 }, (_, idx) => ({
+    angle: (idx / 320) * Math.PI * 2,
+    radius: 1.32 + (Math.random() - 0.5) * 0.08,
+    teal: Math.random() < 0.85
+  }));
+
+  // Ambient floating star dust particles
+  const ambientPoints = Array.from({ length: 90 }, () => ({
+    x: (Math.random() - 0.5) * 3.2,
+    y: (Math.random() - 0.5) * 3.2,
+    z: (Math.random() - 0.5) * 2.0,
+    teal: Math.random() < 0.22,
+    size: 0.6 + Math.random() * 1.2
+  }));
+
+  // Resize handling
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+
+  function handleResize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    if (width === 0 || height === 0) return;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  handleResize();
+  const ro = new ResizeObserver(handleResize);
+  ro.observe(canvas);
+
+  // Mouse interaction coordinates (-1 to 1)
+  let targetMouseX = 0;
+  let targetMouseY = 0;
+
+  function onPointerMove(e) {
+    targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+    targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+  }
+
+  window.addEventListener('pointermove', onPointerMove, { passive: true });
+
+  // Animation loop
+  let pitch = 0;
+  let yaw = 0;
+  let animId = 0;
+  let isVisible = true;
+
+  function render(time) {
+    if (!isVisible || width === 0) {
+      if (!prefersReducedMotion) animId = requestAnimationFrame(render);
+      return;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    const scale = 0.38 * Math.min(width, height);
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Smooth mouse damping
+    pitch += (0.28 * targetMouseY - pitch) * 0.045;
+    yaw += (0.38 * targetMouseX - yaw) * 0.045;
+
+    // Rotation angles (continual gentle yaw + mouse offset)
+    const rotY = 14e-5 * time + yaw;
+    const rotX = -0.22 + pitch;
+
+    const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+    const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+    // Ambient radial teal glow backdrop
+    const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 1.7 * scale);
+    grad.addColorStop(0, "rgba(13, 242, 201, 0.22)");
+    grad.addColorStop(0.4, "rgba(13, 242, 201, 0.06)");
+    grad.addColorStop(1, "rgba(13, 242, 201, 0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+
+    // 3D Projection Helper (Cartesian Y -> Canvas Y)
+    function project(x, y, z) {
+      const cy = -y;
+      const rx = -x * sinY + z * cosY;
+      const rz = cy * sinX + rx * cosX;
+      const fov = 2.8 / (2.8 - rz);
+      return {
+        px: centerX + (x * cosY + z * sinY) * scale * fov,
+        py: centerY + (cy * cosX - rx * sinX) * scale * fov,
+        z: rz,
+        s: fov
+      };
+    }
+
+    // Draw orbital ring (back half z <= 0, then front half z > 0)
+    function drawRing(front) {
+      const ringRot = 4.5e-4 * time;
+      for (const pt of ringPoints) {
+        const a = pt.angle + ringRot;
+        const x = Math.cos(a) * pt.radius;
+        const z = Math.sin(a) * pt.radius;
+        // Tilt the ring in 3D around the center of the question mark
+        const p = project(x, 0.12 + 0.28 * z, 0.95 * z);
+        if (front !== (p.z > 0)) continue;
+        const alpha = front ? 0.95 : 0.30;
+        ctx.fillStyle = pt.teal ? `rgba(13, 242, 201, ${alpha})` : `rgba(244, 244, 242, ${alpha * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, 1.5 * p.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 1. Back of Ring
+    drawRing(false);
+
+    // 2. Ambient background dust
+    for (const pt of ambientPoints) {
+      const p = project(pt.x, pt.y, pt.z);
+      if (p.z > -1.5) {
+        const alpha = Math.max(0.1, Math.min(0.7, (p.z + 1.2) * 0.3));
+        ctx.fillStyle = pt.teal ? `rgba(13, 242, 201, ${alpha})` : `rgba(244, 244, 242, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, pt.size * p.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 3. Question Mark Particles
+    for (const pt of qPoints) {
+      const p = project(pt.x, pt.y, pt.z);
+      const depth = (p.z + 1) / 2;
+      const alpha = Math.max(0.15, Math.min(1.0, 0.15 + 0.85 * depth));
+      
+      if (pt.teal) {
+        ctx.fillStyle = `rgba(13, 242, 201, ${alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(244, 244, 242, ${alpha})`;
+      }
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, (0.7 + 1.1 * depth) * pt.size * p.s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Front of Ring
+    drawRing(true);
+
+    if (!prefersReducedMotion) {
+      animId = requestAnimationFrame(render);
+    }
+  }
+
+  // Intersection Observer to pause when offscreen
+  const io = new IntersectionObserver(([entry]) => {
+    isVisible = entry.isIntersecting;
+    if (isVisible && !prefersReducedMotion) {
+      cancelAnimationFrame(animId);
+      animId = requestAnimationFrame(render);
+    }
+  });
+  io.observe(canvas);
+
+  if (prefersReducedMotion) {
+    render(4000);
   } else {
-    charIdx++;
-    target.textContent = currentWord.substring(0, charIdx);
+    animId = requestAnimationFrame(render);
   }
+}
 
-  let delay = isDeleting ? 45 : 90;
+// ----------------------------------------------------------
+// 2. INTERACTIVE HOW-IT-WORKS STEP SELECTOR (Keel .steps-x)
+// ----------------------------------------------------------
+const stepData = [
+  { tag: "STEP 01 • INGESTION", figure: "100%", caption: "Live real-time market data streamed from Polymarket Gamma and ESPN scoreboards." },
+  { tag: "STEP 02 • x402 MICROPAYMENT", figure: "0.1 SUI", caption: "Standardized machine-payable HTTP 402 challenge settled on Sui mainnet with zero latency." },
+  { tag: "STEP 03 • ALPHA ARBITRATION", figure: "+18%", caption: "Consensus divergence isolates sharp predictors from bookmaker odds." },
+  { tag: "STEP 04 • EXPONENTIAL FADE", figure: "0.30x", caption: "Chronic bluffers with Brier score > 0.50 are faded to 0.30x consensus weight." },
+  { tag: "STEP 05 • WALRUS MEMORY", figure: "5 Blobs", caption: "Immutable decentralized dossiers committed to @mysten-incubation/memwal relayer." }
+];
 
-  if (!isDeleting && charIdx === currentWord.length) {
-    delay = 2000; // Pause at full word
-    isDeleting = true;
-  } else if (isDeleting && charIdx === 0) {
-    isDeleting = false;
-    wordIdx = (wordIdx + 1) % typewriterWords.length;
-    delay = 400; // Pause before typing next word
-  }
-
-  typewriterTimer = setTimeout(runTypewriter, delay);
+function selectStep(idx) {
+  const items = document.querySelectorAll('#steps-stack li');
+  items.forEach((item, i) => {
+    if (i === idx) item.classList.add('on');
+    else item.classList.remove('on');
+  });
+  const data = stepData[idx];
+  if (!data) return;
+  const tagEl = document.getElementById('readout-tag');
+  const figEl = document.getElementById('readout-figure');
+  const capEl = document.getElementById('readout-caption');
+  if (tagEl) tagEl.textContent = data.tag;
+  if (figEl) figEl.textContent = data.figure;
+  if (capEl) capEl.textContent = data.caption;
 }
 
 // ----------------------------------------------------------
@@ -125,11 +376,14 @@ function showView(viewName) {
   const appNav = document.getElementById('app-nav-links');
   const actionText = document.getElementById('nav-action-text');
 
+  const dockContainer = document.getElementById('dock-container');
+
   if (viewName === 'landing') {
     if (landingView) landingView.style.display = 'block';
     if (appView) appView.style.display = 'none';
     if (landingNav) landingNav.style.display = 'flex';
     if (appNav) appNav.style.display = 'none';
+    if (dockContainer) dockContainer.style.display = 'none';
     if (actionText) actionText.textContent = 'Launch App Console';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else {
@@ -137,6 +391,7 @@ function showView(viewName) {
     if (appView) appView.style.display = 'block';
     if (landingNav) landingNav.style.display = 'none';
     if (appNav) appNav.style.display = 'flex';
+    if (dockContainer) dockContainer.style.display = 'block';
     if (actionText) actionText.textContent = 'Back to Landing';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showAppTab(state.currentAppTab || 'arena');
@@ -415,6 +670,56 @@ function renderEvents() {
       </div>
     `;
   }).join('');
+
+  const landingContainer = document.getElementById('landing-events-grid');
+  if (landingContainer) {
+    const landingEvents = (state.events || []).slice(0, 3);
+    landingContainer.innerHTML = landingEvents.map(e => {
+      const isESPN = e.source === 'espn';
+      const tagClass = isESPN ? 'source-espn' : 'source-polymarket';
+      const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
+      const outcomes = (e.outcomes && e.outcomes.length > 0) ? e.outcomes : Object.keys(e.outcomeProbabilities || {});
+      const outcomesHtml = outcomes.map(outcomeName => {
+        const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
+        const probPct = Math.round(prob * 100);
+        return `
+          <div class="outcome-bar-container">
+            <div class="outcome-fill" style="width:${probPct}%;"></div>
+            <div class="outcome-content">
+              <span>${outcomeName}</span>
+              <span class="mono" style="color:var(--teal);">${probPct}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="event-card">
+          <div>
+            <div class="event-header">
+              <span class="event-tag ${isESPN ? 'event-tag-sports' : ''}">${sourceLabel}</span>
+              <span class="mono" style="font-size:0.72rem; color:var(--muted);">${(e.category || 'markets').toUpperCase()}</span>
+            </div>
+            <h3 class="event-title">${e.title}</h3>
+            <p class="event-desc">${e.description || 'Live streamed prediction market.'}</p>
+          </div>
+          <div>
+            <div class="outcome-list">
+              ${outcomesHtml}
+            </div>
+            <div class="event-footer">
+              <button class="btn-wager-x402" onclick="openWagerModal('${e.id}')">
+                Put Down Stake (x402)
+              </button>
+              <button class="btn-resolve-sm" onclick="openResolveModal('${e.id}')">
+                Resolve
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   setTimeout(initScrollObserver, 40);
 }
@@ -1070,8 +1375,7 @@ function showToast(message, type = 'info') {
 // 18. INITIALIZATION
 // ----------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  runTypewriter();
+  initQuestionMarkOrb();
   fetchProtocolStats();
   loadEvents();
   const urlParams = new URLSearchParams(window.location.search);
