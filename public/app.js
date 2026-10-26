@@ -438,7 +438,7 @@ function showAppTab(tabName) {
   if (topBtn) topBtn.classList.add('active');
 
   // Update desktop navbar app links
-  document.querySelectorAll('#app-nav-links .nav-link-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('#app-nav-links button').forEach(btn => btn.classList.remove('active'));
   const appNavBtn = document.getElementById(`app-nav-${tabName}`);
   if (appNavBtn) appNavBtn.classList.add('active');
 
