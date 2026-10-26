@@ -1397,27 +1397,186 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  display: flex;
+/* ==========================================================
+   MODAL DIALOG SYSTEM (.modal-overlay, .modal-paper)
+   ========================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
-.modal-close-btn:hover {
-  background: var(--bg-subtle);
+.modal-overlay[style*="display: none"],
+.modal-overlay[style*="display:none"] {
+  display: none !important;
+}
+
+.modal-overlay[style*="display: flex"],
+.modal-overlay[style*="display:flex"] {
+  display: flex !important;
+}
+
+.modal-paper {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 24px !important;
+  padding: 32px 28px !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3) !important;
+  box-sizing: border-box !important;
+  animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute !important;
+  top: 18px !important;
+  right: 20px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  background: var(--bg-subtle) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--muted) !important;
+  font-size: 1.3rem !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-close:hover {
+  background: var(--danger-tint) !important;
+  border-color: var(--danger) !important;
+  color: var(--danger) !important;
+}
+
+.modal-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 1.35rem;
+  font-weight: 800;
   color: var(--ink);
+  margin: 8px 0 6px;
+  letter-spacing: -0.02em;
 }
 
-.x402-code-box {
+.modal-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 12px 14px;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--r-box);
-  padding: 14px;
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
+  border-radius: 12px;
   color: var(--ink);
-  overflow-x: auto;
-  line-height: 1.5;
-  margin-bottom: 18px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.modal-input:focus {
+  outline: none;
+  border-color: var(--sui-blue);
+  box-shadow: 0 0 0 3px var(--sui-tint);
+}
+
+.pick-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pick-buttons-grid button {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  border: 1.5px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.pick-buttons-grid button:hover {
+  border-color: var(--sui-blue);
+  background: var(--card);
+}
+
+.pick-buttons-grid button.active {
+  border-color: var(--sui-blue) !important;
+  background: var(--sui-tint) !important;
+  color: var(--sui-blue) !important;
+  box-shadow: 0 0 0 2px var(--sui-tint) !important;
+}
+
+.x402-challenge-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--gold-border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.x402-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
 /* Toast Notifications */
