@@ -116,7 +116,7 @@ function initQuestionMarkOrb() {
   // 2. Surrounding Orbital Spiral Ring
   const ringPoints = Array.from({ length: 320 }, (_, idx) => ({
     angle: (idx / 320) * Math.PI * 2,
-    radius: 1.32 + (Math.random() - 0.5) * 0.08,
+    radius: 1.15 + (Math.random() - 0.5) * 0.06,
     teal: Math.random() < 0.85
   }));
 
@@ -174,9 +174,10 @@ function initQuestionMarkOrb() {
 
     ctx.clearRect(0, 0, width, height);
 
-    const scale = 0.38 * Math.min(width, height);
-    const centerX = width / 2;
-    const centerY = height / 2;
+    const isMobile = width < 880;
+    const centerX = isMobile ? width * 0.5 : width * 0.70;
+    const centerY = isMobile ? height * 0.55 : height * 0.50;
+    const scale = Math.min(width * (isMobile ? 0.38 : 0.26), height * 0.40);
 
     // Smooth mouse damping
     pitch += (0.28 * targetMouseY - pitch) * 0.045;
@@ -188,14 +189,6 @@ function initQuestionMarkOrb() {
 
     const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
     const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-
-    // Ambient radial teal glow backdrop
-    const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 1.7 * scale);
-    grad.addColorStop(0, "rgba(13, 242, 201, 0.22)");
-    grad.addColorStop(0.4, "rgba(13, 242, 201, 0.06)");
-    grad.addColorStop(1, "rgba(13, 242, 201, 0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, width, height);
 
     // 3D Projection Helper (Cartesian Y -> Canvas Y)
     function project(x, y, z) {
@@ -592,6 +585,58 @@ function filterCategory(category, btn) {
   renderEvents();
 }
 
+function createEventCardHtml(e) {
+  const isESPN = e.source === 'espn';
+  const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
+  const tagClass = isESPN ? 'event-tag-sports' : (e.category === 'crypto' ? 'event-tag-crypto' : '');
+
+  const outcomes = (e.outcomes && e.outcomes.length > 0)
+    ? e.outcomes
+    : Object.keys(e.outcomeProbabilities || {});
+
+  const outcomesHtml = outcomes.map(outcomeName => {
+    const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
+    const probPct = Math.round(prob * 100);
+    return `
+      <div class="outcome-bar-container">
+        <div class="outcome-fill" style="width:${probPct}%;"></div>
+        <div class="outcome-content">
+          <span>${outcomeName}</span>
+          <span class="mono" style="color:var(--teal); font-weight:800;">${probPct}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const resolveBtn = e.status !== 'resolved'
+    ? `<button class="btn-resolve-sm" onclick="openResolveModal('${e.id}')" title="Resolve outcome with official oracle">Resolve</button>`
+    : `<span style="font-size:0.75rem; color:var(--emerald); font-weight:800; padding:5px 10px; background:var(--emerald-tint); border-radius:6px; border:1px solid rgba(16,185,129,0.3);">RESOLVED</span>`;
+
+  return `
+    <div class="event-card rise-in" id="card-${e.id}">
+      <div>
+        <div class="event-header">
+          <span class="event-tag ${tagClass}">${sourceLabel}</span>
+          <span class="mono" style="font-size:0.72rem; color:var(--muted);">${(e.category || 'markets').toUpperCase()}</span>
+        </div>
+        <h3 class="event-title">${e.title}</h3>
+        <p class="event-desc">${e.description || 'Live market event streaming from verified official data sources.'}</p>
+      </div>
+      <div>
+        <div class="outcome-list">
+          ${outcomesHtml}
+        </div>
+        <div class="event-footer">
+          <button class="btn-wager-x402" onclick="openWagerModal('${e.id}')">
+            Put Down Stake (x402)
+          </button>
+          ${resolveBtn}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderEvents() {
   const container = document.getElementById('events-grid');
   if (!container) return;
@@ -610,115 +655,18 @@ function renderEvents() {
       <div style="grid-column: 1/-1; text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
         <h3 style="font-weight:800; margin-bottom:8px;">No events match your criteria</h3>
         <p style="color:var(--muted); font-size:0.85rem; margin-bottom:16px;">Try switching feeds or clearing your search query.</p>
-        <button class="btn-primary-sm" onclick="syncLiveFeeds()">Sync Live Feeds Now</button>
+        <button class="btn-wager-x402" onclick="syncLiveFeeds()">Sync Live Feeds Now</button>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = filtered.map(e => {
-    const isESPN = e.source === 'espn';
-    const tagClass = isESPN ? 'source-espn' : 'source-polymarket';
-    const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
-
-    // Outcome options display (robust against outcomes or outcomeProbabilities)
-    const outcomes = (e.outcomes && e.outcomes.length > 0)
-      ? e.outcomes
-      : Object.keys(e.outcomeProbabilities || {});
-
-    const outcomesHtml = outcomes.map(outcomeName => {
-      const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
-      const probPct = Math.round(prob * 100);
-      return `
-        <div style="background:var(--bg-subtle); padding:10px 12px; border-radius:10px; margin-bottom:8px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="font-size:0.88rem; color:var(--ink);">${outcomeName}</strong>
-            <span class="mono" style="font-size:0.82rem; font-weight:800; color:var(--sui-blue);">${probPct}%</span>
-          </div>
-          <div style="background:var(--border); height:5px; border-radius:3px; overflow:hidden;">
-            <div style="background:var(--sui-blue); width:${probPct}%; height:100%;"></div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const resolveBtn = e.status !== 'resolved'
-      ? `<button class="btn-ghost-sm" onclick="openResolveModal('${e.id}')" title="Resolve outcome with official oracle" style="font-size:0.75rem;">Resolve</button>`
-      : `<span style="font-size:0.75rem; color:var(--emerald); font-weight:800; padding:4px 8px; background:var(--emerald-tint); border-radius:6px;">RESOLVED</span>`;
-
-    return `
-      <div class="event-card rise-in" id="card-${e.id}">
-        <div class="event-header">
-          <span class="event-source-tag ${tagClass}">${sourceLabel}</span>
-          <span class="mono" style="font-size:0.72rem; color:var(--muted);">${e.category.toUpperCase()}</span>
-        </div>
-
-        <h3 class="event-title">${e.title}</h3>
-        <p class="event-desc">${e.description || 'Live market event streaming from verified official data sources.'}</p>
-
-        <div style="margin: 14px 0;">
-          ${outcomesHtml}
-        </div>
-
-        <div class="event-actions">
-          <button class="btn-primary-sm" onclick="openWagerModal('${e.id}')" style="flex:1; justify-content:center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Put Down Stake (x402)
-          </button>
-          ${resolveBtn}
-        </div>
-      </div>
-    `;
-  }).join('');
+  container.innerHTML = filtered.map(e => createEventCardHtml(e)).join('');
 
   const landingContainer = document.getElementById('landing-events-grid');
   if (landingContainer) {
     const landingEvents = (state.events || []).slice(0, 3);
-    landingContainer.innerHTML = landingEvents.map(e => {
-      const isESPN = e.source === 'espn';
-      const tagClass = isESPN ? 'source-espn' : 'source-polymarket';
-      const sourceLabel = isESPN ? 'ESPN LIVE' : 'POLYMARKET';
-      const outcomes = (e.outcomes && e.outcomes.length > 0) ? e.outcomes : Object.keys(e.outcomeProbabilities || {});
-      const outcomesHtml = outcomes.map(outcomeName => {
-        const prob = e.outcomeProbabilities?.[outcomeName] ?? 0.5;
-        const probPct = Math.round(prob * 100);
-        return `
-          <div class="outcome-bar-container">
-            <div class="outcome-fill" style="width:${probPct}%;"></div>
-            <div class="outcome-content">
-              <span>${outcomeName}</span>
-              <span class="mono" style="color:var(--teal);">${probPct}%</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      return `
-        <div class="event-card">
-          <div>
-            <div class="event-header">
-              <span class="event-tag ${isESPN ? 'event-tag-sports' : ''}">${sourceLabel}</span>
-              <span class="mono" style="font-size:0.72rem; color:var(--muted);">${(e.category || 'markets').toUpperCase()}</span>
-            </div>
-            <h3 class="event-title">${e.title}</h3>
-            <p class="event-desc">${e.description || 'Live streamed prediction market.'}</p>
-          </div>
-          <div>
-            <div class="outcome-list">
-              ${outcomesHtml}
-            </div>
-            <div class="event-footer">
-              <button class="btn-wager-x402" onclick="openWagerModal('${e.id}')">
-                Put Down Stake (x402)
-              </button>
-              <button class="btn-resolve-sm" onclick="openResolveModal('${e.id}')">
-                Resolve
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    landingContainer.innerHTML = landingEvents.map(e => createEventCardHtml(e)).join('');
   }
 
   setTimeout(initScrollObserver, 40);
@@ -760,25 +708,25 @@ async function renderConsensusView() {
       const divSign = divergence > 0 ? '+' : '';
 
       return `
-        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items:center; padding:12px 0; border-bottom:1px solid var(--rule); font-size:0.86rem;">
           <div><strong style="color:var(--ink);">${outcomeName}</strong></div>
-          <div class="mono" style="color:var(--muted);">${bookProb}%</div>
-          <div class="mono" style="color:var(--sui-blue); font-weight:800;">${consensusProb}%</div>
+          <div class="mono" style="color:var(--ink-2);">${bookProb}%</div>
+          <div class="mono" style="color:var(--teal); font-weight:800;">${consensusProb}%</div>
           <div class="mono" style="color:${divColor}; font-weight:800;">${divSign}${divergence}%</div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="event-card rise-in" style="margin-bottom:16px;">
+      <div class="event-card rise-in" style="margin-bottom:18px;">
         <div class="event-header">
-          <span class="mono" style="font-size:0.75rem; color:var(--muted);">${e.source.toUpperCase()} &bull; ${e.category.toUpperCase()}</span>
-          <span style="font-size:0.72rem; background:var(--sui-tint); color:var(--sui-blue); font-weight:800; padding:2px 8px; border-radius:6px;">STAKE WEIGHTED</span>
+          <span class="mono" style="font-size:0.75rem; color:var(--muted);">${e.source.toUpperCase()} &bull; ${(e.category || 'markets').toUpperCase()}</span>
+          <span style="font-size:0.72rem; background:rgba(13,242,201,0.1); color:var(--teal); font-weight:800; padding:3px 10px; border-radius:999px; border:1px solid var(--teal-border);">STAKE WEIGHTED</span>
         </div>
-        <h4 style="font-size:1.05rem; font-weight:800; margin: 4px 0 12px; color:var(--ink);">${e.title}</h4>
+        <h4 style="font-size:1.1rem; font-weight:700; margin: 4px 0 14px; color:var(--ink);">${e.title}</h4>
         
-        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; font-size:0.72rem; color:var(--muted); font-weight:800; text-transform:uppercase; padding-bottom:6px; border-bottom:1px solid var(--border);">
-          <div>Option</div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; font-size:0.72rem; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:0.06em; padding-bottom:8px; border-bottom:1px solid var(--rule);">
+          <div>Outcome</div>
           <div>Bookmaker Odds</div>
           <div>Sharp Consensus</div>
           <div>Alpha Divergence</div>
