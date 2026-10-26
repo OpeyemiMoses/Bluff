@@ -1141,22 +1141,236 @@ body {
   justify-content: space-between;
   border-top: 1px solid var(--border);
   padding-top: 14px;
-  margin-top: auto;
 }
 
-.btn-wager-x402 {
-  background: var(--ink);
-  color: var(--bg);
-  border: 1px solid var(--ink);
-  border-radius: var(--r-btn);
-  padding: 6px 14px;
-  font-size: 0.78rem;
+/* ==========================================================
+   WALRUS MEMORY AUDIT STREAM & CARDS (.audit-stream, .memory-card)
+   ========================================================== */
+
+.audit-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.memory-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  border-left: 5px solid var(--border);
+}
+
+.memory-card.card-won {
+  border-left-color: var(--emerald);
+}
+
+.memory-card.card-bluff {
+  border-left-color: var(--danger);
+}
+
+.memory-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--sui-border);
+}
+
+.memory-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.memory-forecaster-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.memory-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.12), rgba(0, 113, 227, 0.25));
+  border: 1px solid var(--sui-border);
+  color: var(--sui-blue);
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+}
+
+.memory-avatar.avatar-bluffer {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.25));
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--danger);
+}
+
+.memory-forecaster-id {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
   font-weight: 800;
+  color: var(--ink);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.memory-forecaster-id:hover {
+  color: var(--sui-blue);
+}
+
+.memory-timestamp {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.memory-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge-won {
+  background: var(--emerald-tint);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-lost {
+  background: var(--danger-tint);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.memory-event-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+/* 3-Column Dossier Metrics Strip */
+.memory-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 600px) {
+  .memory-metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.memory-metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memory-metric-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memory-metric-value {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.memory-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.walrus-job-pill {
+  font-family: var(--font-mono);
+  background: var(--sui-tint);
+  color: var(--sui-blue);
+  border: 1px solid var(--sui-border);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.74rem;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  text-decoration: none;
   transition: all 0.2s ease;
+}
+
+.walrus-job-pill:hover {
+  background: var(--sui-blue);
+  color: #fff;
+}
+
+.brier-delta-badge {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.walrus-verified-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
 }
 
 [data-theme="dark"] .btn-wager-x402 {

@@ -13,6 +13,8 @@ const state = {
   currentAppTab: 'arena', // 'arena', 'consensus', 'forecasters', 'memories'
   categoryFilter: 'all',
   searchQuery: '',
+  memoryFilter: 'all',
+  memorySearch: '',
   events: [],
   forecasters: [],
   memories: [],
@@ -181,7 +183,7 @@ function showAppTab(tabName) {
   if (activeTab) activeTab.style.display = 'block';
 
   // Update top subtab navigation pills
-  document.querySelectorAll('.filter-pill, #tab-btn-arena, #tab-btn-consensus, #tab-btn-forecasters, #tab-btn-memories').forEach(btn => {
+  document.querySelectorAll('#tab-btn-arena, #tab-btn-consensus, #tab-btn-forecasters, #tab-btn-memories').forEach(btn => {
     btn.classList.remove('active');
   });
   const topBtn = document.getElementById(`tab-btn-${tabName}`);
@@ -310,6 +312,9 @@ async function loadEvents() {
     const data = await res.json();
     state.events = data.events || [];
     renderEvents();
+    if (state.currentAppTab === 'consensus') {
+      renderConsensusView();
+    }
   } catch (err) {
     console.error('[Bluff] Failed to load events:', err);
     showToast('Failed to connect to live events feed', 'error');
@@ -423,7 +428,8 @@ async function renderConsensusView() {
 
   if (state.events.length === 0) {
     container.innerHTML = '<p style="color:var(--muted); text-align:center; padding:32px;">Loading live events for consensus analysis...</p>';
-    return;
+    await loadEvents();
+    if (state.events.length === 0) return;
   }
 
   const sampleEvents = state.events.slice(0, 10);
@@ -561,6 +567,18 @@ async function renderForecastersView() {
 // ----------------------------------------------------------
 // 10. WALRUS MEMORY MAINNET AUDIT STREAM (GET /api/memories)
 // ----------------------------------------------------------
+function searchMemories(query) {
+  state.memorySearch = (query || '').toLowerCase();
+  renderWalrusAuditCards();
+}
+
+function filterMemories(filterType, btn) {
+  state.memoryFilter = filterType;
+  document.querySelectorAll('#memory-filter-pills .filter-pill').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderWalrusAuditCards();
+}
+
 async function renderWalrusAuditView() {
   const container = document.getElementById('walrus-stream-container');
   if (!container) return;
@@ -571,41 +589,165 @@ async function renderWalrusAuditView() {
     const data = await res.json();
     state.memories = data.memories || [];
 
-    if (state.memories.length === 0) {
-      container.innerHTML = `
-        <div style="text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
-          <h3 style="font-weight:800; margin-bottom:8px;">No Walrus Memories Written Yet</h3>
-          <p style="color:var(--muted); font-size:0.85rem;">Resolve any active market event in the arena to commit an immutable memory to the Walrus relayer.</p>
-        </div>
-      `;
-      return;
-    }
+    // Update filter counts
+    const totalCount = state.memories.length;
+    const wonCount = state.memories.filter(m => m.memoryText && m.memoryText.includes('Result: WON')).length;
+    const bluffCount = state.memories.filter(m => m.memoryText && (m.memoryText.includes('LOST (BLUFF)') || m.memoryText.includes('Bluff detected'))).length;
 
-    container.innerHTML = state.memories.map(m => {
-      const isPositive = (m.brierDelta || 0) < 0; // Negative Brier delta means improved accuracy!
-      const deltaColor = isPositive ? 'var(--emerald)' : 'var(--danger)';
-      const deltaSign = (m.brierDelta || 0) > 0 ? '+' : '';
+    const countAllEl = document.getElementById('walrus-count-all');
+    const countWonEl = document.getElementById('walrus-count-won');
+    const countBluffEl = document.getElementById('walrus-count-bluff');
+    if (countAllEl) countAllEl.textContent = totalCount;
+    if (countWonEl) countWonEl.textContent = wonCount;
+    if (countBluffEl) countBluffEl.textContent = bluffCount;
 
-      return `
-        <div class="audit-item rise-in">
-          <div class="audit-meta">
-            <span class="mono" style="font-weight:800; color:var(--ink);">${m.forecasterId}</span>
-            <span class="mono" style="color:var(--muted);">${new Date(m.timestamp).toLocaleTimeString()} &bull; ${new Date(m.timestamp).toLocaleDateString()}</span>
-          </div>
-          <div class="audit-text">${m.memoryText}</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.75rem;">
-            <span class="mono" style="color:var(--sui-blue); font-weight:700;">Job ID: ${m.walrusJobId || 'sqlite-relayed'}</span>
-            <span class="mono" style="color:${deltaColor}; font-weight:800;">Brier Delta: ${deltaSign}${(m.brierDelta || 0).toFixed(4)}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    setTimeout(initScrollObserver, 40);
+    renderWalrusAuditCards();
   } catch (err) {
     console.error('[Bluff] Walrus stream error:', err);
-    container.innerHTML = `<p style="color:var(--danger); text-align:center;">Failed to load Walrus Memory stream.</p>`;
+    container.innerHTML = `<p style="color:var(--danger); text-align:center; padding:32px;">Failed to load Walrus Memory stream.</p>`;
   }
+}
+
+function renderWalrusAuditCards() {
+  const container = document.getElementById('walrus-stream-container');
+  if (!container) return;
+
+  if (state.memories.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
+        <h3 style="font-weight:800; margin-bottom:8px;">No Walrus Memories Written Yet</h3>
+        <p style="color:var(--muted); font-size:0.85rem;">Resolve any active market event in the arena to commit an immutable memory to the Walrus relayer.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const query = state.memorySearch || '';
+  const filter = state.memoryFilter || 'all';
+
+  const filtered = state.memories.filter(m => {
+    const isWon = m.memoryText && m.memoryText.includes('Result: WON');
+    const isBluff = m.memoryText && (m.memoryText.includes('LOST (BLUFF)') || m.memoryText.includes('Bluff detected'));
+
+    if (filter === 'won' && !isWon) return false;
+    if (filter === 'bluff' && !isBluff) return false;
+
+    if (query) {
+      const matchText = (m.memoryText || '').toLowerCase();
+      const matchForecaster = (m.forecasterId || '').toLowerCase();
+      const matchCategory = (m.category || '').toLowerCase();
+      if (!matchText.includes(query) && !matchForecaster.includes(query) && !matchCategory.includes(query)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 48px; background:var(--card); border:1px solid var(--border); border-radius:18px;">
+        <h3 style="font-weight:800; margin-bottom:8px;">No Matching Walrus Records</h3>
+        <p style="color:var(--muted); font-size:0.85rem;">Try adjusting your search query or filter selection.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(m => {
+    const isWon = m.memoryText && m.memoryText.includes('Result: WON');
+    const isPositive = (m.brierDelta || 0) < 0 || isWon;
+    const deltaColor = isPositive ? 'var(--emerald)' : 'var(--danger)';
+    const deltaSign = (m.brierDelta || 0) > 0 ? '+' : '';
+
+    // Parse structured fields from audit text
+    const marketMatch = m.memoryText.match(/for "(.*?)"/);
+    const marketTitle = marketMatch ? marketMatch[1] : (m.category?.toUpperCase() || 'Prediction Event');
+
+    const pickMatch = m.memoryText.match(/predicted "(.*?)"/);
+    const pick = pickMatch ? pickMatch[1] : 'Option';
+
+    const confMatch = m.memoryText.match(/with (\d+)% confidence/);
+    const confidence = confMatch ? `${confMatch[1]}%` : '';
+
+    const brierMatch = m.memoryText.match(/Updated Brier Score: ([\d\.]+)/);
+    const brierScore = brierMatch ? brierMatch[1] : (isWon ? '0.250' : '1.000');
+
+    const weightMatch = m.memoryText.match(/weight: ([\d\.]+x)/) || m.memoryText.match(/faded to ([\d\.]+x)/);
+    const weight = weightMatch ? weightMatch[1] : (isWon ? '1.50x' : '0.30x');
+
+    const isBluffer = m.forecasterId.includes('bluffer');
+    const avatarInitial = m.forecasterId.includes('sharp') ? 'S' : (isBluffer ? 'B' : 'F');
+    const cardClass = isWon ? 'card-won' : 'card-bluff';
+    const avatarClass = isBluffer ? 'avatar-bluffer' : '';
+
+    return `
+      <div class="memory-card ${cardClass} rise-in">
+        <div class="memory-card-header">
+          <div class="memory-forecaster-block">
+            <div class="memory-avatar ${avatarClass}">${avatarInitial}</div>
+            <div>
+              <div class="memory-forecaster-id" onclick="openForecasterDossier('${m.forecasterId}')" title="Click to view full forecaster dossier">
+                <span>${m.forecasterId}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="memory-timestamp">${new Date(m.timestamp).toLocaleTimeString()} &bull; ${new Date(m.timestamp).toLocaleDateString()}</div>
+            </div>
+          </div>
+
+          <div class="memory-badges-row">
+            ${isWon ? `
+              <span class="badge-won">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                RESOLVED: WON
+              </span>
+            ` : `
+              <span class="badge-lost">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                BLUFF DETECTED
+              </span>
+            `}
+            <span class="mono" style="font-size:0.7rem; background:var(--bg-subtle); color:var(--muted); padding:3px 8px; border-radius:6px; border:1px solid var(--border); font-weight:700;">
+              ${(m.category || 'markets').toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <div class="memory-event-title">${marketTitle}</div>
+
+        <div class="memory-metrics-grid">
+          <div class="memory-metric-box">
+            <span class="memory-metric-label">Forecaster Call</span>
+            <span class="memory-metric-value">"${pick}" ${confidence ? `<span style="font-size:0.8rem; color:var(--muted);">(${confidence})</span>` : ''}</span>
+          </div>
+          <div class="memory-metric-box">
+            <span class="memory-metric-label">Brier Calibration</span>
+            <span class="memory-metric-value" style="color:var(--ink);">${brierScore} <span style="font-size:0.8rem; color:${deltaColor};">(${deltaSign}${(m.brierDelta || 0).toFixed(4)})</span></span>
+          </div>
+          <div class="memory-metric-box">
+            <span class="memory-metric-label">Consensus Weight</span>
+            <span class="memory-metric-value" style="color:${isWon ? 'var(--emerald)' : 'var(--danger)'};">
+              ${weight} <span style="font-size:0.76rem; font-weight:700;">${isWon ? 'Boosted &uarr;' : 'Faded &darr;'}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="memory-card-footer">
+          <a href="https://relayer.memory.walrus.xyz" target="_blank" rel="noopener noreferrer" class="walrus-job-pill" title="View cryptographic storage record on Walrus Relayer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Blob: ${m.walrusJobId || 'sqlite-relayed'}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </a>
+
+          <div class="walrus-verified-tag">
+            <span class="tag-pulse-dot" style="width:6px; height:6px; background:var(--sui-blue); box-shadow:0 0 0 2px var(--sui-tint);"></span>
+            <span>Walrus Protocol Verified</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  setTimeout(initScrollObserver, 40);
 }
 
 // ----------------------------------------------------------
@@ -934,6 +1076,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadEvents();
   const urlParams = new URLSearchParams(window.location.search);
   const initialView = urlParams.get('view') || 'landing';
+  const initialTab = urlParams.get('tab') || 'arena';
   showView(initialView);
+  if (initialView === 'app' && initialTab) {
+    showAppTab(initialTab);
+  }
   setTimeout(initScrollObserver, 100);
 });

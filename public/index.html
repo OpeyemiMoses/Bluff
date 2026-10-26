@@ -478,11 +478,34 @@
       <section id="app-tab-memories" class="app-subtab" style="display:none;">
         <div class="section-header rise-in">
           <div>
-            <h2 class="section-title">Walrus Mainnet Memory Stream</h2>
-            <p class="section-sub">Decentralized memory records committed via @mysten-incubation/memwal relayer.</p>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
+              <h2 class="section-title" style="margin:0;">Walrus Mainnet Memory Stream</h2>
+              <span class="mono" style="font-size:0.72rem; background:var(--sui-tint); color:var(--sui-blue); padding:3px 10px; border-radius:999px; border:1px solid var(--sui-border); font-weight:800; display:inline-flex; align-items:center; gap:6px;">
+                <span class="tag-pulse-dot" style="width:6px; height:6px;"></span> Mainnet Relayer
+              </span>
+            </div>
+            <p class="section-sub">Cryptographically sealed forecaster dossiers and Brier calibration shifts committed to @mysten-incubation/memwal.</p>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="mono" style="font-size:0.75rem; background:var(--sui-tint); color:var(--sui-blue); padding:4px 8px; border-radius:6px;">relayer.memory.walrus.xyz</span>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a href="https://relayer.memory.walrus.xyz" target="_blank" rel="noopener noreferrer" class="btn-ghost-sm mono" style="font-size:0.76rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              <span>relayer.memory.walrus.xyz</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Walrus Search and Filter Bar -->
+        <div class="filter-paper-card" style="margin-bottom:20px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 18px;">
+          <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between;">
+            <div class="search-box" style="flex:1; min-width:240px; display:flex; align-items:center; gap:8px; background:var(--bg-subtle); border:1px solid var(--border); border-radius:10px; padding:8px 12px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="memory-search-input" placeholder="Search memory blobs by forecaster or market question..." oninput="searchMemories(this.value)" style="border:none; background:transparent; width:100%; outline:none; color:var(--ink); font-size:0.85rem;" />
+            </div>
+            <div class="filter-pills" id="memory-filter-pills" style="margin:0;">
+              <button class="filter-pill active" id="mem-filter-all" onclick="filterMemories('all', this)">All Blobs (<span id="walrus-count-all">5</span>)</button>
+              <button class="filter-pill" id="mem-filter-won" onclick="filterMemories('won', this)">Resolved: Won (<span id="walrus-count-won">4</span>)</button>
+              <button class="filter-pill" id="mem-filter-bluff" onclick="filterMemories('bluff', this)">Bluffs Detected (<span id="walrus-count-bluff">1</span>)</button>
+            </div>
           </div>
         </div>
 
