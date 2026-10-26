@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import path from 'path';
 import dotenv from 'dotenv';
 import { dbService } from './db/database.js';
 import { LiveDataService } from './services/live_data.js';
@@ -13,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3402;
 
 app.use(express.json());
+app.use(express.static(path.resolve(process.cwd(), 'public')));
 
 // Enable CORS for testing and client integration
 app.use((req, res, next) => {

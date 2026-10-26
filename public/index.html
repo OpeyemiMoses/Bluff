@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bluff — Adversarial Prediction Arbiter with x402 & Walrus Memory</title>
+  <meta name="description" content="Talk is cheap. Back your hot takes with machine-payable Sui micro-stakes via x402, or get permanently exposed by Walrus Memory." />
+
+  <!-- Google Fonts: Work Sans, Instrument Serif, Geist Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <div class="nav-logo" onclick="switchView('arena')">
+        <div class="logo-badge">B</div>
+        <span class="logo-text">Bluff<span class="serif-italic">.ai</span></span>
+      </div>
+
+      <div class="nav-center-links desktop-only">
+        <button class="nav-link-btn active" id="nav-btn-arena" onclick="switchView('arena')">Live Arena</button>
+        <button class="nav-link-btn" id="nav-btn-consensus" onclick="switchView('consensus')">Consensus & Alpha</button>
+        <button class="nav-link-btn" id="nav-btn-forecasters" onclick="switchView('forecasters')">Forecaster Dossiers</button>
+        <button class="nav-link-btn" id="nav-btn-memories" onclick="switchView('memories')">Walrus Audit</button>
+      </div>
+
+      <div class="nav-right-actions">
+        <!-- Light / Dark Theme Switcher Button -->
+        <button class="btn-theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Light/Dark Theme">
+          <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+
+        <button class="btn-ghost-sm mono" id="wallet-connect-btn" onclick="openWalletModal()">
+          <span class="tag-pulse-dot" style="background:var(--sui-blue); box-shadow:0 0 0 3px var(--sui-tint);"></span>
+          <span id="wallet-label">0x_agent_demo</span>
+        </button>
+
+        <button class="btn-primary-sm" onclick="toggleDock()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Controls
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="hero-container">
+      <div class="hero-tag rise-in">
+        <span class="tag-pulse-dot"></span> LIVE SUI MAINNET &bull; WALRUS MEMORY &bull; x402 AGENT PAYMENTS
+      </div>
+
+      <h1 class="hero-title rise-in delay-1">
+        Back your hot takes <br />
+        the <span class="serif-italic">provable</span> way
+      </h1>
+
+      <p class="hero-sub rise-in delay-2">
+        The Adversarial Prediction Arbiter. Put down a machine-payable <strong>x402 micro-stake on Sui</strong>, 
+        or get permanently exposed by <strong>Walrus Memory</strong>. Sharps get amplified; chronic bluffers get faded.
+      </p>
+
+      <div class="flow-pills-row rise-in delay-3">
+        <div class="flow-pill">
+          <span class="mono">01</span> Pick Live Market
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-pill active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          02 Settle x402 Sui Stake
+        </div>
+        <span class="flow-arrow">&rarr;</span>
+        <div class="flow-pill">
+          <span class="mono">03</span> Audit on Walrus Mainnet
+        </div>
+      </div>
+
+      <div class="hero-ctas rise-in delay-3">
+        <button class="btn-primary-lg" onclick="switchView('arena')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Enter Live Arena
+        </button>
+        <button class="btn-ghost-sm" onclick="switchView('consensus')">
+          Explore Alpha Divergence
+        </button>
+        <button class="btn-ghost-sm" onclick="syncLiveFeeds()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Sync Polymarket & ESPN
+        </button>
+      </div>
+
+      <!-- Live Stats Ribbon -->
+      <div class="stats-card-container rise-in delay-4">
+        <div class="stat-item">
+          <div class="stat-number" id="stat-markets-count">29</div>
+          <div class="stat-label">LIVE MARKETS (POLY + ESPN)</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="stat-sui-staked">4.25 SUI</div>
+          <div class="stat-label">x402 STAKES LOCKED</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="stat-memories-written" style="color:var(--sui-blue);">5</div>
+          <div class="stat-label">WALRUS MAINNET MEMORIES</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="stat-faded-count" style="color:var(--danger);">1</div>
+          <div class="stat-label">CHRONIC BLUFFERS FADED</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Views Container -->
+  <main class="container">
+
+    <!-- VIEW 1: LIVE ARENA -->
+    <section id="view-arena" class="page-view">
+      <div class="section-header rise-in">
+        <div>
+          <h2 class="section-title">Live Prediction Arena</h2>
+          <p class="section-sub">100% Real-time markets from Polymarket Gamma API and live ESPN fixtures.</p>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="filterCategory('all')">All Feeds</button>
+          <button class="filter-pill" onclick="filterCategory('sports')">Sports (NFL/EPL)</button>
+          <button class="filter-pill" onclick="filterCategory('crypto')">Crypto</button>
+          <button class="filter-pill" onclick="filterCategory('markets')">Markets & Politics</button>
+        </div>
+      </div>
+
+      <div class="events-grid" id="events-grid">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: ALPHA DIVERGENCE & CONSENSUS -->
+    <section id="view-consensus" class="page-view" style="display:none;">
+      <div class="section-header rise-in">
+        <div>
+          <h2 class="section-title">Sharp Consensus vs. Bookmaker Odds</h2>
+          <p class="section-sub">Where Walrus Memory calibration differs from traditional odds, creating Alpha.</p>
+        </div>
+      </div>
+
+      <div id="consensus-container" class="events-grid">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- VIEW 3: FORECASTER DOSSIERS -->
+    <section id="view-forecasters" class="page-view" style="display:none;">
+      <div class="section-header rise-in">
+        <div>
+          <h2 class="section-title">Forecaster Reputation & Dossiers</h2>
+          <p class="section-sub">Every analyst has a living memory profile: Brier scores, past bluffs, and reputation multipliers.</p>
+        </div>
+      </div>
+
+      <div class="events-grid" id="forecasters-grid">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- VIEW 4: WALRUS MEMORIES AUDIT STREAM -->
+    <section id="view-memories" class="page-view" style="display:none;">
+      <div class="section-header rise-in">
+        <div>
+          <h2 class="section-title">Walrus Memory Mainnet Audit Log</h2>
+          <p class="section-sub">Immutable records committed to <code class="mono">relayer.memory.walrus.xyz</code></p>
+        </div>
+      </div>
+
+      <div id="memories-list" style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================
+       COLLAPSIBLE UP TAB (BOTTOM DOCK CONTROLS)
+       ========================================================== -->
+  <div class="dock-container" id="dock-container">
+    <div class="dock-wrapper" id="dock-wrapper">
+      
+      <!-- Dock Header Bar (Always visible handle) -->
+      <div class="dock-header-bar" onclick="toggleDock()">
+        <div class="dock-summary">
+          <span>Bluff Controller</span>
+          <span class="dock-stat-pill">
+            <span class="tag-pulse-dot" style="width:6px; height:6px;"></span>
+            SUI MAINNET
+          </span>
+          <span class="dock-stat-pill">
+            WALRUS: OK
+          </span>
+          <span class="dock-stat-pill desktop-only">
+            x402: ACTIVE
+          </span>
+        </div>
+
+        <button class="dock-toggle-btn" type="button">
+          <span id="dock-btn-label">Dashboard & Controls</span>
+          <svg class="dock-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      </div>
+
+      <!-- Dock Collapsible Body -->
+      <div class="dock-content" id="dock-content">
+        <div class="dock-nav-grid">
+          <div class="dock-nav-card active" id="dock-card-arena" onclick="switchView('arena')">
+            <div class="dock-nav-title">Live Arena</div>
+            <div class="dock-nav-sub">Browse markets & stake</div>
+          </div>
+          <div class="dock-nav-card" id="dock-card-consensus" onclick="switchView('consensus')">
+            <div class="dock-nav-title">Consensus Alpha</div>
+            <div class="dock-nav-sub">Sharp vs. bookmaker</div>
+          </div>
+          <div class="dock-nav-card" id="dock-card-forecasters" onclick="switchView('forecasters')">
+            <div class="dock-nav-title">Dossiers & Bluffers</div>
+            <div class="dock-nav-sub">Brier calibration scores</div>
+          </div>
+          <div class="dock-nav-card" id="dock-card-memories" onclick="switchView('memories')">
+            <div class="dock-nav-title">Walrus Stream</div>
+            <div class="dock-nav-sub">Mainnet memory audit</div>
+          </div>
+          <div class="dock-nav-card" onclick="openResolveModal()">
+            <div class="dock-nav-title" style="color:var(--emerald);">Settle Event</div>
+            <div class="dock-nav-sub">Simulate resolution & memory</div>
+          </div>
+        </div>
+
+        <div class="dock-wallet-strip">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--sui-tint); display:flex; align-items:center; justify-content:center; color:var(--sui-blue); font-weight:800;">
+              SUI
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--muted); font-weight:700;">CONNECTED AGENT VAULT</div>
+              <div class="mono" style="font-size:0.85rem; font-weight:700;" id="dock-address-display">0x68ca...427a</div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="text-align:right;">
+              <div style="font-size:0.7rem; color:var(--muted); font-weight:700;">AVAILABLE STAKE BALANCE</div>
+              <div class="mono" style="font-size:1.1rem; font-weight:900; color:var(--emerald);" id="dock-balance-display">25.00 SUI</div>
+            </div>
+            <button class="btn-primary-sm" onclick="resetWalletBalance()">Faucet +10 SUI</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       MODALS
+       ========================================================== -->
+
+  <!-- MODAL: x402 STAKING NEGOTIATION -->
+  <div class="modal-backdrop" id="modal-wager-x402" onclick="closeModalOnBackdrop(event, 'modal-wager-x402')">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('modal-wager-x402')">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span class="tag-pulse-dot" style="background:var(--sui-blue);"></span>
+        <h3 style="font-size:1.3rem; font-weight:900;" id="wager-modal-title">Challenge Outcome via x402</h3>
+      </div>
+
+      <p style="font-size:0.86rem; color:var(--muted); margin-bottom:16px;" id="wager-modal-desc">
+        Submitting pick for "<strong id="wager-event-title"></strong>".
+      </p>
+
+      <!-- Protocol Flow Tabs -->
+      <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+          <span style="color:var(--muted);">Selected Outcome:</span>
+          <strong id="wager-pick-name" style="color:var(--ink);">Yes</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+          <span style="color:var(--muted);">Market Implied Prob:</span>
+          <strong id="wager-pick-prob" class="mono">50%</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+          <span style="color:var(--muted);">x402 Required Stake:</span>
+          <strong id="wager-pick-stake" class="mono" style="color:var(--sui-blue);">0.25 SUI</strong>
+        </div>
+        <div style="border-top:1px dashed var(--border); margin:8px 0;"></div>
+        <div style="display:flex; justify-content:space-between; font-size:0.92rem; font-weight:800;">
+          <span style="color:var(--muted);">Potential Payout:</span>
+          <strong id="wager-pick-payout" class="mono" style="color:var(--emerald);">0.50 SUI</strong>
+        </div>
+      </div>
+
+      <!-- x402 Protocol Inspection Box -->
+      <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">
+        x402 Protocol Challenge Payload (Server &rarr; Client):
+      </div>
+      <div class="x402-code-box" id="x402-challenge-preview">
+        <!-- Injected JSON -->
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn-ghost-sm" style="flex:1; justify-content:center;" onclick="closeModal('modal-wager-x402')">Cancel</button>
+        <button class="btn-primary-sm" style="flex:2; justify-content:center; padding:12px;" onclick="executeX402Stake()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Sign & Lock Stake on Sui
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EVENT RESOLVER SIMULATOR -->
+  <div class="modal-backdrop" id="modal-resolve-event" onclick="closeModalOnBackdrop(event, 'modal-resolve-event')">
+    <div class="modal-card">
+      <button class="modal-close-btn" onclick="closeModal('modal-resolve-event')">&times;</button>
+      
+      <h3 style="font-size:1.3rem; font-weight:900; margin-bottom:8px;">Settle Event & Commit Walrus Memories</h3>
+      <p style="font-size:0.86rem; color:var(--muted); margin-bottom:16px;">
+        Pick an active event and declared winner. This grades wagers, recalculates Brier scores, and writes persistent audit records to Walrus Mainnet.
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+        <div>
+          <label style="font-size:0.78rem; font-weight:800; color:var(--muted); display:block; margin-bottom:4px;">SELECT EVENT TO RESOLVE</label>
+          <select id="resolve-event-select" onchange="updateResolveOutcomes()" style="width:100%; padding:10px 14px; background:var(--bg-subtle); border:1px solid var(--border); border-radius:12px; color:var(--ink); font-weight:600;">
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:0.78rem; font-weight:800; color:var(--muted); display:block; margin-bottom:4px;">WINNING OUTCOME</label>
+          <select id="resolve-winner-select" style="width:100%; padding:10px 14px; background:var(--bg-subtle); border:1px solid var(--border); border-radius:12px; color:var(--ink); font-weight:600;">
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary-sm full-width" style="justify-content:center; padding:14px;" onclick="executeEventResolution()">
+        Confirm Resolution & Settle to Walrus
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: FORECASTER DOSSIER -->
+  <div class="modal-backdrop" id="modal-dossier" onclick="closeModalOnBackdrop(event, 'modal-dossier')">
+    <div class="modal-card" style="max-width:580px;">
+      <button class="modal-close-btn" onclick="closeModal('modal-dossier')">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--sui-tint); display:flex; align-items:center; justify-content:center; color:var(--sui-blue); font-weight:900;">
+          0x
+        </div>
+        <div>
+          <h3 style="font-size:1.25rem; font-weight:900;" id="dossier-forecaster-id">Forecaster</h3>
+          <span id="dossier-rating-badge" class="event-tag">CALIBRATED</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:16px;">
+        <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center;">
+          <div class="mono" style="font-size:1.25rem; font-weight:900;" id="dossier-brier">0.500</div>
+          <div style="font-size:0.65rem; font-weight:800; color:var(--muted); text-transform:uppercase;">Brier Score</div>
+        </div>
+        <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center;">
+          <div class="mono" style="font-size:1.25rem; font-weight:900; color:var(--emerald);" id="dossier-record">0 / 0</div>
+          <div style="font-size:0.65rem; font-weight:800; color:var(--muted); text-transform:uppercase;">Won / Calls</div>
+        </div>
+        <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center;">
+          <div class="mono" style="font-size:1.25rem; font-weight:900; color:var(--sui-blue);" id="dossier-weight">1.00x</div>
+          <div style="font-size:0.65rem; font-weight:800; color:var(--muted); text-transform:uppercase;">Pick Multiplier</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:0.85rem; font-weight:800; text-transform:uppercase; margin-bottom:8px; color:var(--muted);">
+        Walrus Memory History:
+      </h4>
+      <div id="dossier-memories-list" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto;">
+        <!-- Injected -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
